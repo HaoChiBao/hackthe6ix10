@@ -28,6 +28,7 @@ const Home = () => {
           ...doc.data(),
         }));
         setProjects(projectsData);
+        console.log("Projects:", projectsData);
       } catch (error) {
         console.error("Error fetching projects:", error);
       }
