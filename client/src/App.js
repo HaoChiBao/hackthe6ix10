@@ -1,18 +1,15 @@
+import { Routes, Route } from 'react-router-dom';
 import './App.css';
+
+import Test from './pages/test';
 
 function App() {
   return (
-    <div className="App">
-      
-      <div className="test1">
-        hi
-      </div>
-
-      <textarea className="test2">
-        hi
-      </textarea>
-
-    </div>
+    <>
+      <Routes>
+        <Route path="/" element={<Test />} />
+      </Routes>
+    </>
   );
 }
 
