@@ -4,7 +4,7 @@ import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ArrowLeft } from "lucide-react";
 
-export default function Renderer() {
+export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
   const [projectName, setProjectName] = useState("");
@@ -20,7 +20,7 @@ export default function Renderer() {
     DOMPurify.sanitize(htmlInput)
   );
 
-  const projectId = "sZiN5fts7q0ATyvnIo4c";
+  const projectId = id;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,10 +102,8 @@ export default function Renderer() {
     }
     setIsRecording(!isRecording);
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSanitizedHTML(DOMPurify.sanitize(htmlInput));
+  const handleDeploy = async () => {
+    console.log("Deploying project...");
   };
 
   const handleSave = async () => {
@@ -178,7 +176,7 @@ export default function Renderer() {
           </button>
           <button
             type="submit"
-            onClick={handleSubmit}
+            onClick={handleDeploy}
             className="render-button"
           >
             Deploy
