@@ -26,14 +26,14 @@ export default function Renderer() {
   const TEST_ROOM = 'TEST_ROOM'
 
   const testFunc = () => {
-      ws.send(JSON.stringify({
-          action: 'TEST',
-          data: [
-              {'test': 'test'},
-              {'test': 'test'},
-              {'test': 'test'}
-          ]
-      }))
+    ws.send(JSON.stringify({
+      action: 'TEST',
+      data: [
+          {'test': 'test'},
+          {'test': 'test'},
+          {'test': 'test'}
+      ]
+    }))
   }
 
   const updateCursor = (cursor, id) => {
