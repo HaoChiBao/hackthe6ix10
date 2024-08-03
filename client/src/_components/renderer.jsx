@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
 
 export default function Renderer() {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
+  const iframeRef = useRef(null);
 
   const [input, setInput] = useState(``);
   const [isRecording, setIsRecording] = useState(false);
@@ -23,6 +24,22 @@ export default function Renderer() {
       document.head.removeChild(style);
     };
   }, [cssInput]);
+
+  useEffect(() => {
+    const iframeDocument = iframeRef.current?.contentDocument;
+    if (iframeDocument) {
+      iframeDocument.open();
+      iframeDocument.write(`
+        <html>
+          <head>
+            <style>${DOMPurify.sanitize(cssInput)}</style>
+          </head>
+          <body>${DOMPurify.sanitize(htmlInput)}</body>
+        </html>
+      `);
+      iframeDocument.close();
+    }
+  }, [htmlInput, cssInput]);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -135,7 +152,11 @@ export default function Renderer() {
             </button>
           </div>
         </div>
-        <div dangerouslySetInnerHTML={{ __html: sanitizedHTML }} />
+        {/* <div dangerouslySetInnerHTML={{ __html: sanitizedHTML }} /> */}
+        <iframe
+          ref={iframeRef}
+          style={{ width: "100%", height: "500px", border: "none" }}
+        />
       </div>
     </main>
   );
