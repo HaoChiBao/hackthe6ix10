@@ -78,10 +78,6 @@ const Test = () => {
                     case 'Welcome':
                         // console.log(data)
                         break
-                    case 'updateHTML':
-                        const html = data.data.html
-                        updateHTML(html)
-                        break
                 }
             } catch (error) {
                 console.error('Error:', error)

@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
 
+import cursorAsset from '../assets/cursor.png'
+
+import './renderer.css'
+
 export default function Renderer() {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
@@ -15,11 +19,6 @@ export default function Renderer() {
     DOMPurify.sanitize(htmlInput)
   );
 
-  useEffect(() => {
-    window.addEventListener('mousemove', (e) => {
-      // console.log(e.x, e.y)
-    })
-  },[]);
   const [innerText, setInnerText] = useState("...")
   const serverAddress = 'ws://localhost:8080'
   const [ws, setWS] = useState(null)
@@ -35,6 +34,49 @@ export default function Renderer() {
               {'test': 'test'}
           ]
       }))
+  }
+
+  const updateCursor = (cursor, id) => {
+    let cursorElement = document.getElementById(id)
+    if(cursorElement === null || cursorElement === undefined) {
+      // create a new cursor element
+      cursorElement = document.createElement('div')
+      cursorElement.className = 'client-cursor'
+      cursorElement.id = id
+
+      const cursorImage = document.createElement('img')
+      cursorImage.src = cursorAsset
+      cursorElement.appendChild(cursorImage)
+
+      const colours = [
+        'red', 'blue', 'green', 'purple', 'orange', 'pink'
+      ]
+      const color = colours[Math.floor(Math.random() * colours.length)]
+      // filter: drop-shadow(1.3px 0 0 red) 
+      //       drop-shadow(0 1.3px 0 red)
+      //       drop-shadow(-1.3px 0 0 red) 
+      //       drop-shadow(0 -1.3px 0 red);
+      cursorElement.style.filter = `drop-shadow(1.3px 0 0 ${color}) drop-shadow(0 1.3px 0 ${color}) drop-shadow(-1.3px 0 0 ${color}) drop-shadow(0 -1.3px 0 ${color})`
+
+      document.body.appendChild(cursorElement)
+    }
+    cursorElement.style.left = cursor.x + 'px'
+    cursorElement.style.top = cursor.y + 'px'
+    // console.log(cursorElement)
+  }
+
+  const handleMouseMove = (e) => {
+    const cursor = {
+      x: e.clientX,
+      y: e.clientY
+    }
+
+    sendWS({
+        action: 'updateCursor',
+        data: {
+            cursor
+        }
+    })
   }
 
   // Update the innerHTML of the div
@@ -54,7 +96,8 @@ export default function Renderer() {
           }
           ws.send(JSON.stringify(message))
       } catch (error) {
-          console.error('Error:', error)
+          console.error('Send WS Error')
+          // console.error('Error:', error)
       }
   }
 
@@ -88,7 +131,7 @@ export default function Renderer() {
               const message = JSON.parse(e.data)
               const action = message.action
               const data = message.data
-              console.log(message)
+              // console.log(message)
               switch(action){
                   case 'Welcome':
                       // console.log(data)
@@ -100,6 +143,18 @@ export default function Renderer() {
                   case 'updateCSS':
                       const css = data.css
                       updateCSS(css)
+                      break
+                  case 'updateCursor':
+                      const cursor = data.cursor
+                      const id = data.id
+                      updateCursor(cursor, id)
+                      break
+                  case 'client_disconnected':
+                      const client_id = data.ws_id
+                      const client_cursor = document.getElementById(client_id)
+                      if(client_cursor !== null) {
+                        client_cursor.remove()
+                      }
                       break
               }
           } catch (error) {
@@ -205,7 +260,7 @@ export default function Renderer() {
   };
 
   return (
-    <main>
+    <main onMouseMove={handleMouseMove}>
       <header>websitify</header>
       <div className="interface">
         <div className="code-panel">

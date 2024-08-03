@@ -100,7 +100,7 @@ wss.on('connection', (ws) => {
             const messageObj = JSON.parse(message)
             const action = messageObj.action
             const data = messageObj.data
-            console.log(messageObj)
+            // console.log(messageObj)
             switch(action){
                 case 'TEST':
                     // console.log(messageObj)
@@ -133,6 +133,17 @@ wss.on('connection', (ws) => {
                         }
                     }))
                     break
+
+                case'updateCursor':
+                    const cursor = data.cursor
+                    broadcast(ws, JSON.stringify({
+                        action,
+                        data: {
+                            cursor,
+                            id: ws.id
+                        }
+                    }))
+                    break
             }
 
             // 
@@ -153,19 +164,13 @@ wss.on('connection', (ws) => {
     
     ws.on('close', () => {
         console.log(`Client: ${ws.id} disconnected`);
+        broadcast(ws, JSON.stringify({
+            action: 'client_disconnected',
+            data: {
+                ws_id: ws.id,
+            }
+        }))
         leaveProject(ws.roomID, ws)
-
-        // Broadcast the message to all clients
-        // client_rooms[room].clients.forEach((client) => {
-        //     client.send(
-        //         JSON.stringify({
-        //             action: 'user_disconnect',
-        //             data: ws.id,
-        //             timeStamp: Date.now()
-        //         })
-        //     );
-        // });
-
     });
 
     return
