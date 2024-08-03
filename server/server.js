@@ -33,11 +33,6 @@ wss.on('connection', (ws) => {
     ws.id = Math.random().toString(36).substr(2, 9);
     console.log(`Client id: ${ws.id} connected`);
 
-    let room = 'defaultRoom';
-    let entity = new UserEntity(100, 100, ws.id, ws)
-    
-    client_rooms[room].clients.push(ws);
-    
     // Send a welcome message
     ws.send(
         // send as buffer
@@ -53,12 +48,10 @@ wss.on('connection', (ws) => {
         const data = messageObj.data
         switch(action){
             case 'TEST':
-                entity.physics.keyControls = data
+                console.log('TEST')
                 break
         }
         
-        // console.log(`message from client: ${ws.id}`);
-    
         // Broadcast the message to all clients
         // broadcast(ws, message);
     });
@@ -67,22 +60,22 @@ wss.on('connection', (ws) => {
         console.log(`Client: ${ws.id} disconnected`);
 
         // Broadcast the message to all clients
-        client_rooms[room].clients.forEach((client) => {
-            client.send(
-                JSON.stringify({
-                    action: 'user_disconnect',
-                    data: ws.id,
-                    timeStamp: Date.now()
-                })
-            );
-        });
+        // client_rooms[room].clients.forEach((client) => {
+        //     client.send(
+        //         JSON.stringify({
+        //             action: 'user_disconnect',
+        //             data: ws.id,
+        //             timeStamp: Date.now()
+        //         })
+        //     );
+        // });
 
     });
     
 });
 
 // Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
 });
