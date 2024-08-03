@@ -83,12 +83,24 @@ wss.on('connection', (ws) => {
             },
         })
     );
+
+    /* 
+    
+    {
+        action: 'join_project',
+        data: {
+            TEST: TEST_ID
+        }
+    }
+
+    */
     
     ws.on('message', (message) => {
         try {
             const messageObj = JSON.parse(message)
             const action = messageObj.action
             const data = messageObj.data
+            console.log(messageObj)
             switch(action){
                 case 'TEST':
                     // console.log(messageObj)
@@ -106,13 +118,21 @@ wss.on('connection', (ws) => {
                 case 'updateHTML':
                     const html = data.html
                     broadcast(ws, JSON.stringify({
-                        action: 'updateHTML',
+                        action,
                         data: {
-                            html: html
+                            html
                         }
                     }))
                     break
-
+                case 'updateCSS':
+                    const css = data.css
+                    broadcast(ws, JSON.stringify({
+                        action,
+                        data: {
+                            css
+                        }
+                    }))
+                    break
             }
 
             // 
@@ -148,6 +168,7 @@ wss.on('connection', (ws) => {
 
     });
 
+    return
     try{
         // ChatGPT
         let chat_ws = new WebSocket('ws://127.0.0.1:8000/ws/generateHTML');
