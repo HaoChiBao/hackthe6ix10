@@ -5,6 +5,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { db } from "../firebase";
 
+import cursorAsset from "../assets/cursor.png";
+
+import "./renderer.css";
+
 export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
@@ -21,6 +25,7 @@ export default function Renderer({ id }) {
     DOMPurify.sanitize(htmlInput)
   );
 
+  const [innerText, setInnerText] = useState("...");
   const serverAddress = "ws://localhost:8080";
   const [ws, setWS] = useState(null);
 
@@ -29,6 +34,80 @@ export default function Renderer({ id }) {
       console.log(0);
     });
   }, []);
+
+  const TEST_ROOM = "TEST_ROOM";
+
+  const testFunc = () => {
+    ws.send(
+      JSON.stringify({
+        action: "TEST",
+        data: [{ test: "test" }, { test: "test" }, { test: "test" }],
+      })
+    );
+  };
+
+  const updateCursor = (cursor, id) => {
+    let cursorElement = document.getElementById(id);
+    if (cursorElement === null || cursorElement === undefined) {
+      // create a new cursor element
+      cursorElement = document.createElement("div");
+      cursorElement.className = "client-cursor";
+      cursorElement.id = id;
+
+      const cursorImage = document.createElement("img");
+      cursorImage.src = cursorAsset;
+      cursorElement.appendChild(cursorImage);
+
+      const colours = ["red", "blue", "green", "purple", "orange", "pink"];
+      const color = colours[Math.floor(Math.random() * colours.length)];
+      // filter: drop-shadow(1.3px 0 0 red)
+      //       drop-shadow(0 1.3px 0 red)
+      //       drop-shadow(-1.3px 0 0 red)
+      //       drop-shadow(0 -1.3px 0 red);
+      cursorElement.style.filter = `drop-shadow(1.3px 0 0 ${color}) drop-shadow(0 1.3px 0 ${color}) drop-shadow(-1.3px 0 0 ${color}) drop-shadow(0 -1.3px 0 ${color})`;
+
+      document.body.appendChild(cursorElement);
+    }
+    cursorElement.style.left = cursor.x + "px";
+    cursorElement.style.top = cursor.y + "px";
+    // console.log(cursorElement)
+  };
+
+  const handleMouseMove = (e) => {
+    const cursor = {
+      x: e.clientX,
+      y: e.clientY,
+    };
+
+    sendWS({
+      action: "updateCursor",
+      data: {
+        cursor,
+      },
+    });
+  };
+
+  // Update the innerHTML of the div
+  const updateHTML = (html) => {
+    setHtmlInput(html);
+  };
+
+  const updateCSS = (css) => {
+    setCssInput(css);
+  };
+
+  const sendWS = (message) => {
+    try {
+      if (ws === null) {
+        console.log("Websocket is not connected");
+        return;
+      }
+      ws.send(JSON.stringify(message));
+    } catch (error) {
+      console.error("Send WS Error");
+      // console.error('Error:', error)
+    }
+  };
 
   useEffect(() => {
     const initiate_WS = async () => {
@@ -42,6 +121,14 @@ export default function Renderer({ id }) {
 
       ws.onopen = () => {
         console.log("Connected to the server");
+        ws.send(
+          JSON.stringify({
+            action: "join_project",
+            data: {
+              roomID: TEST_ROOM,
+            },
+          })
+        );
       };
 
       ws.onclose = (e) => {
@@ -55,11 +142,45 @@ export default function Renderer({ id }) {
           console.error("Error:", error);
         }
       };
-
-      ws.onerror = (e) => {
-        console.error("Error:", e);
-      };
+      try {
+        const message = JSON.parse(e.data);
+        const action = message.action;
+        const data = message.data;
+        // console.log(message)
+        switch (action) {
+          case "Welcome":
+            // console.log(data)
+            break;
+          case "updateHTML":
+            const html = data.html;
+            updateHTML(html);
+            break;
+          case "updateCSS":
+            const css = data.css;
+            updateCSS(css);
+            break;
+          case "updateCursor":
+            const cursor = data.cursor;
+            const id = data.id;
+            updateCursor(cursor, id);
+            break;
+          case "client_disconnected":
+            const client_id = data.ws_id;
+            const client_cursor = document.getElementById(client_id);
+            if (client_cursor !== null) {
+              client_cursor.remove();
+            }
+            break;
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
     };
+
+    ws.onerror = (e) => {
+      console.error("Error:", e);
+    };
+
     initiate_WS();
   }, [ws]);
 
@@ -89,6 +210,35 @@ export default function Renderer({ id }) {
     };
     fetchData();
   }, [id]);
+
+  const changeInnerCSS = (e) => {
+    const css = e.target.value;
+    updateCSS(css);
+
+    sendWS({
+      action: "updateCSS",
+      data: {
+        css,
+      },
+    });
+  };
+
+  const changeInnerHTML = (e) => {
+    // find textfield selectionstart and selectionend
+    const selectionStart = e.target.selectionStart;
+    const selectionEnd = e.target.selectionEnd;
+    console.log(selectionStart, selectionEnd);
+
+    const html = e.target.value;
+    updateHTML(html);
+
+    sendWS({
+      action: "updateHTML",
+      data: {
+        html,
+      },
+    });
+  };
 
   useEffect(() => {
     const iframeDocument = iframeRef.current?.contentDocument;
@@ -140,6 +290,7 @@ export default function Renderer({ id }) {
     }
     setIsRecording(!isRecording);
   };
+
   const handleDeploy = async () => {
     console.log("Deploying project...");
   };
@@ -186,7 +337,7 @@ export default function Renderer({ id }) {
   };
 
   return (
-    <main>
+    <main onMouseMove={handleMouseMove}>
       <div className="top-bar">
         <Link className="back-button" to="/">
           <ArrowLeft size={16} />
@@ -245,7 +396,7 @@ export default function Renderer({ id }) {
                   <textarea
                     id="html"
                     value={htmlInput}
-                    onChange={(e) => setHtmlInput(e.target.value)}
+                    onChange={changeInnerHTML}
                     rows="20"
                     cols="50"
                   />
@@ -257,7 +408,7 @@ export default function Renderer({ id }) {
                   <textarea
                     id="css"
                     value={cssInput}
-                    onChange={(e) => setCssInput(e.target.value)}
+                    onChange={changeInnerCSS}
                     rows="20"
                     cols="50"
                   />
