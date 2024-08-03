@@ -12,7 +12,8 @@ app.use(express.static('public'));
 
 // Broadcast to all connected clients, except the sender
 function broadcast(ws, message) {
-    wss.clients.forEach((client) => {
+    projects_ids[ws.roomID].clients.forEach((client) => {
+    // wss.clients.forEach((client) => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(message);
         }
@@ -25,12 +26,50 @@ const projects_ids = {
     }
 }
 
-// seerver
+const createProject = (id) => {
+    try {
+        projects_ids[id] = {
+            clients: []
+        }
+    }catch (error) {
+        console.error('Error:', error)
+    }
+}
+
+const deleteProject = (id) => {
+    try {
+        delete projects_ids[id]
+    } catch (error) {
+        console.error('Error:', error)
+    }
+}
+
+const leaveProject = (id, ws) => {
+    try {
+        if(projects_ids[id] === undefined || projects_ids[id] === null) return
+        projects_ids[id].clients = projects_ids[id].clients.filter((client) => client !== ws)
+        ws.roomID = null
+        if(projects_ids[id].clients.length === 0) deleteProject(id)
+    } catch (error) {
+        console.error('Error:', error)
+    }
+}
+
+const joinProject = (id, ws) => {
+    try {
+        if(projects_ids[id] === undefined || projects_ids[id] === null) createProject(id)
+        projects_ids[id].clients.push(ws)
+        ws.roomID = id
+    } catch (error) {
+        console.error('Error:', error)
+    }
+}
 
 // WebSocket connection handling
 wss.on('connection', (ws) => {
     // generate unique id for each client
     ws.id = Math.random().toString(36).substr(2, 9);
+    ws.roomID = null
     console.log(`Client id: ${ws.id} connected`);
 
     // Send a welcome message
@@ -38,18 +77,54 @@ wss.on('connection', (ws) => {
         // send as buffer
         JSON.stringify({
             action: 'Welcome',
-            data: ws.id,
+            data: {
+                ws_id: ws.id,
+                ws_roomID: ws.roomID,
+            },
         })
     );
     
     ws.on('message', (message) => {
-        const messageObj = JSON.parse(message)
-        const action = messageObj.action
-        const data = messageObj.data
-        switch(action){
-            case 'TEST':
-                console.log('TEST')
-                break
+        try {
+            const messageObj = JSON.parse(message)
+            const action = messageObj.action
+            const data = messageObj.data
+            switch(action){
+                case 'TEST':
+                    // console.log(messageObj)
+                    // ws.send(JSON.stringify(messageObj))
+                    console.log(projects_ids)
+                    break
+                case 'join_project':
+                    const roomID = data.roomID
+                    joinProject(roomID, ws)
+                    break
+                case 'leave_project':
+                    leaveProject(ws.roomID, ws)
+                    break
+
+                case 'updateHTML':
+                    const html = data.html
+                    broadcast(ws, JSON.stringify({
+                        action: 'updateHTML',
+                        data: {
+                            html: html
+                        }
+                    }))
+                    break
+
+            }
+
+            // 
+            ws.send(JSON.stringify({
+                action: 'message_received',
+                data: {
+                    ws_id: ws.id,
+                    ws_roomID: ws.roomID,
+                }
+            }))
+        } catch (error) {
+            console.error('Error:', error)
         }
         
         // Broadcast the message to all clients
@@ -58,6 +133,7 @@ wss.on('connection', (ws) => {
     
     ws.on('close', () => {
         console.log(`Client: ${ws.id} disconnected`);
+        leaveProject(ws.roomID, ws)
 
         // Broadcast the message to all clients
         // client_rooms[room].clients.forEach((client) => {
