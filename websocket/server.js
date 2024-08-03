@@ -147,7 +147,40 @@ wss.on('connection', (ws) => {
         // });
 
     });
+
+    try{
+        // ChatGPT
+        let chat_ws = new WebSocket('ws://127.0.0.1:8000/ws/generateHTML');
     
+        // Open WebSocket connection
+        chat_ws.on('open', function open() {
+            console.log('WebSocket connection opened');
+            console.log(chat_ws)
+            // Send a prompt to the server
+            const prompt = {
+                prompt: "Generate HTML for a simple webpage with a header, footer, and a main section."
+            };
+            chat_ws.send(JSON.stringify(prompt));
+        });
+    
+        // Listen for messages from the server
+        chat_ws.on('message', function incoming(data) {
+            console.log('Received:', data);
+        });
+    
+        // Handle WebSocket errors
+        chat_ws.on('error', function error(err) {
+            console.log('WebSocket error:', err);
+        });
+    
+        // Handle WebSocket close event
+        chat_ws.on('close', function close() {
+            console.log('WebSocket connection closed');
+        });
+    } catch (error) {
+        console.log('CHAT_WS Error:', error)
+    }
+
 });
 
 // Start the server
