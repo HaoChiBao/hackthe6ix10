@@ -2,109 +2,13 @@ import React, { useState, useEffect } from "react";
 import DOMPurify from "dompurify";
 
 export default function Renderer() {
-  const [htmlInput, setHtmlInput] = useState(`
-    <body>
-    <header class="header">
-        <div class="container">
-            <h1 class="header-title">Welcome to CRM System</h1>
-            <p class="header-subtitle">Streamline your customer relationships with ease</p>
-            <a href="#features" class="cta-button">Learn More</a>
-        </div>
-    </header>
+  const [htmlInput, setHtmlInput] = useState(``);
+  const [cssInput, setCssInput] = useState(``);
 
-    <section class="hero">
-        <div class="container">
-            <img src="path/to/hero-image.jpg" alt="CRM dashboard overview" class="hero-image">
-            <h2 class="hero-heading">Transform Your Customer Experience</h2>
-            <p class="hero-description">Our CRM solution provides you with all the tools you need to manage and enhance customer interactions.</p>
-            <a href="#get-started" class="cta-button">Get Started</a>
-        </div>
-    </section>
-
-    <section class="features" id="features">
-        <div class="container">
-            <h2 class="features-title">Features</h2>
-            <div class="features-list">
-                <div class="feature-item">
-                    <img src="path/to/feature1-image.jpg" alt="Feature 1 description" class="feature-image">
-                    <h3 class="feature-title">Feature 1</h3>
-                    <p class="feature-description">Description of feature 1.</p>
-                </div>
-                <div class="feature-item">
-                    <img src="path/to/feature2-image.jpg" alt="Feature 2 description" class="feature-image">
-                    <h3 class="feature-title">Feature 2</h3>
-                    <p class="feature-description">Description of feature 2.</p>
-                </div>
-                <div class="feature-item">
-                    <img src="path/to/feature3-image.jpg" alt="Feature 3 description" class="feature-image">
-                    <h3 class="feature-title">Feature 3</h3>
-                    <p class="feature-description">Description of feature 3.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="testimonial">
-        <div class="container">
-            <h2 class="testimonial-title">What Our Customers Say</h2>
-            <blockquote class="testimonial-quote">
-                <p class="quote-text">"This CRM system has transformed our customer management process. Highly recommend!"</p>
-                <footer class="quote-author">— Customer Name, Company</footer>
-            </blockquote>
-        </div>
-    </section>
-
-    <section class="call-to-action" id="get-started">
-        <div class="container">
-            <h2 class="cta-title">Ready to Enhance Your Customer Management?</h2>
-            <a href="signup.html" class="cta-button">Sign Up Now</a>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <div class="container">
-            <p class="footer-text">&copy; 2024 CRM System. All rights reserved.</p>
-            <ul class="footer-links">
-                <li><a href="#privacy-policy">Privacy Policy</a></li>
-                <li><a href="#terms-of-service">Terms of Service</a></li>
-                <li><a href="#contact">Contact Us</a></li>
-            </ul>
-        </div>
-    </footer>
-</body>
-  `);
-
-  const [cssInput, setCssInput] = useState(`
-    header {
-      background-color: #ff6f61;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    .hero {
-      background: url('hero-image.jpg') no-repeat center center;
-      background-size: cover;
-      color: white;
-      padding: 100px 20px;
-      text-align: center;
-    }
-    .features {
-      padding: 50px 20px;
-      text-align: center;
-    }
-    .features h2 {
-      margin-bottom: 20px;
-    }
-    .feature-item {
-      margin-bottom: 20px;
-    }
-    footer {
-      background-color: #333;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-  `);
+  const [input, setInput] = useState(``);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognition, setRecognition] = useState(null);
+  const [activeTab, setActiveTab] = useState("html");
 
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
@@ -164,37 +68,119 @@ export default function Renderer() {
     };
   }, [cssInput]);
 
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = "en-US";
+
+      rec.onresult = (event) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        setInput(transcript);
+      };
+
+      setRecognition(rec);
+    } else {
+      alert("Speech recognition is not supported in this browser.");
+    }
+  }, []);
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognition.stop();
+    } else {
+      recognition.start();
+      console.log(
+        "Speech recognition started. Try speaking into the microphone."
+      );
+    }
+    setIsRecording(!isRecording);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setSanitizedHTML(DOMPurify.sanitize(htmlInput));
   };
 
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+  };
+
   return (
-    <main className="main">
-      <form className="form" onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="html">HTML:</label>
-          <textarea
-            id="html"
-            value={htmlInput}
-            onChange={(e) => setHtmlInput(e.target.value)}
-            rows="10"
-            cols="50"
-          />
+    <main>
+      <header>websitify</header>
+      <div className="interface">
+        <div className="code-panel">
+          <div>
+            <div className="tab-container">
+              <div className="tabs">
+                <div
+                  className={activeTab === "html" ? "tab-active" : "tab"}
+                  onClick={() => handleTabClick("html")}
+                >
+                  HTML
+                </div>
+                <div
+                  className={activeTab === "css" ? "tab-active" : "tab"}
+                  onClick={() => handleTabClick("css")}
+                >
+                  CSS
+                </div>
+              </div>
+              <button
+                type="submit"
+                onClick={handleSubmit}
+                className="render-button"
+              >
+                Render
+              </button>
+            </div>
+            <form className="form" onSubmit={handleSubmit}>
+              {activeTab === "html" && (
+                <div className="field">
+                  <textarea
+                    id="html"
+                    value={htmlInput}
+                    onChange={(e) => setHtmlInput(e.target.value)}
+                    rows="20"
+                    cols="50"
+                  />
+                </div>
+              )}
+
+              {activeTab === "css" && (
+                <div className="field">
+                  <textarea
+                    id="css"
+                    value={cssInput}
+                    onChange={(e) => setCssInput(e.target.value)}
+                    rows="20"
+                    cols="50"
+                  />
+                </div>
+              )}
+            </form>
+          </div>
+          <div className="prompt-container">
+            <input
+              value={input}
+              className="input"
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="ex. Make a website for a flower shop"
+            />
+            <button type="button" onClick={toggleRecording}>
+              {isRecording ? "Stop Talking" : "Start Talking"}
+            </button>
+          </div>
         </div>
-        <div>
-          <label htmlFor="css">CSS:</label>
-          <textarea
-            id="css"
-            value={cssInput}
-            onChange={(e) => setCssInput(e.target.value)}
-            rows="10"
-            cols="50"
-          />
-        </div>
-        <button type="submit">Render</button>
-      </form>
-      <div dangerouslySetInnerHTML={{ __html: sanitizedHTML }} />
+        <div dangerouslySetInnerHTML={{ __html: sanitizedHTML }} />
+      </div>
     </main>
   );
 }

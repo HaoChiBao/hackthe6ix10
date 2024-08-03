@@ -1,10 +1,133 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
+
+:root {
+  --brand: #372da0;
+  --border: #e0e0e0;
+}
+
+/* COMPONENTS */
+
+button {
+  background-color: var(--brand);
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-family: "DM Sans", sans-serif;
+  font-size: 1rem;
+  height: min-content;
+  text-wrap: nowrap;
+  transition: all 0.25s ease;
+}
+
+button:hover {
+  background-color: #271e7a;
+  cursor: pointer;
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+}
+
+header {
+  padding: 0 24px;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
 main {
+  height: 100vh;
+}
+
+.interface {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  height: calc(100% - 4rem);
 }
 
 form {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-gap: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.code-panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  justify-content: space-between;
+}
+
+.tab-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+.tabs {
+  display: flex;
+}
+
+.tab-container button {
+  border-radius: 0;
+  height: 100% !important;
+}
+
+.tab-active {
+  padding: 1rem 1rem 0.5rem;
+  border-bottom: 3px solid var(--brand);
+  color: var(--brand);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.tab {
+  padding: 1rem 1rem 0.5rem;
+  font-weight: 600;
+  border-bottom: 3px solid white;
+  color: #888888;
+  transition: all 0.25s ease;
+}
+
+.tab:hover {
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prompt-container {
+  padding: 1.5rem;
+  display: flex;
+  gap: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.input {
+  width: 100%;
+}
+
+input {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: #fafafa;
+  font-size: 1rem;
+}
+
+textarea {
+  padding: 1.5rem 1rem;
+  border: none;
+  background-color: #fafafa;
+  font-size: 1rem;
+  overflow: scroll;
+  resize: none;
 }
