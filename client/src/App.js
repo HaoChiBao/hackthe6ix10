@@ -1,17 +1,10 @@
-import './App.css';
+import Renderer from "./_components/renderer.jsx";
+import "./App.css";
 
 function App() {
   return (
     <div className="App">
-      
-      <div className="test1">
-        hi
-      </div>
-
-      <textarea className="test2">
-        hi
-      </textarea>
-
+      <Renderer />
     </div>
   );
 }
