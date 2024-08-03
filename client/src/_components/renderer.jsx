@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
-import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ArrowLeft } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { db } from "../firebase";
 
 export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
@@ -187,7 +187,6 @@ export default function Renderer({ id }) {
 
   return (
     <main>
-      <header>websitify</header>
       <div className="top-bar">
         <Link className="back-button" to="/">
           <ArrowLeft size={16} />

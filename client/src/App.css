@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
 
 :root {
-  --brand: #372da0;
+  --brand: #3b32a0;
   --border: #e0e0e0;
 }
 
@@ -67,22 +67,41 @@ body {
   background: #e1e0e4;
 }
 
-header {
+nav {
   padding: 0 24px;
   height: 4rem;
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+}
+
+nav a {
+  text-decoration: none;
+  color: #000;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-img {
+  border-radius: 50%;
+  height: 2rem;
+  width: 2rem;
 }
 
 main {
-  height: 100vh;
+  height: calc(100vh - 4rem);
 }
 
 .interface {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  height: calc(100% - 7rem);
+  height: calc(100% - 3rem);
 }
 
 form {

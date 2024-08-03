@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Link } from "react-router-dom";
+import GitHubAuth from "../auth/auth";
 
 const Home = () => {
   const [projects, setProjects] = useState([]);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Fetch projects from Firebase
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+    });
+
     const fetchProjects = async () => {
       try {
         const projectsRef = collection(db, "projects");
@@ -23,11 +34,12 @@ const Home = () => {
     };
 
     fetchProjects();
+
+    return () => unsubscribe();
   }, []);
 
   return (
     <div>
-      <header>websitify</header>
       <h1>Projects</h1>
       {projects.map((project) => (
         <Link key={project.id} to={`/${project.id}`}>
