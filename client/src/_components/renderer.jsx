@@ -3,6 +3,7 @@ import DOMPurify from "dompurify";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
@@ -62,19 +63,14 @@ export default function Renderer({ id }) {
     initiate_WS();
   }, [ws]);
 
-  const projectId = id;
-
   useEffect(() => {
+    console.log("ID:" + id);
     const fetchData = async () => {
       try {
-        const projectNameDoc = await getDoc(doc(db, "projects", projectId));
+        const projectNameDoc = await getDoc(doc(db, "projects", id));
 
-        const htmlDoc = await getDoc(
-          doc(db, "projects", projectId, "files", "html")
-        );
-        const cssDoc = await getDoc(
-          doc(db, "projects", projectId, "files", "css")
-        );
+        const htmlDoc = await getDoc(doc(db, "projects", id, "files", "html"));
+        const cssDoc = await getDoc(doc(db, "projects", id, "files", "css"));
 
         if (htmlDoc.exists()) {
           setHtmlInput(htmlDoc.data().value);
@@ -92,7 +88,7 @@ export default function Renderer({ id }) {
       }
     };
     fetchData();
-  }, [projectId]);
+  }, [id]);
 
   useEffect(() => {
     const iframeDocument = iframeRef.current?.contentDocument;
@@ -150,11 +146,11 @@ export default function Renderer({ id }) {
 
   const handleSave = async () => {
     try {
-      await updateDoc(doc(db, "projects", projectId, "files", "html"), {
+      await updateDoc(doc(db, "projects", id, "files", "html"), {
         value: htmlInput,
       });
 
-      await updateDoc(doc(db, "projects", projectId, "files", "css"), {
+      await updateDoc(doc(db, "projects", id, "files", "css"), {
         value: cssInput,
       });
 
@@ -179,7 +175,7 @@ export default function Renderer({ id }) {
   const handleNameKeyDown = async (e) => {
     if (e.key === "Enter") {
       try {
-        await updateDoc(doc(db, "projects", projectId), {
+        await updateDoc(doc(db, "projects", id), {
           name: projectName,
         });
         setIsEditingName(false);
@@ -193,10 +189,10 @@ export default function Renderer({ id }) {
     <main>
       <header>websitify</header>
       <div className="top-bar">
-        <button className="back-button">
+        <Link className="back-button" to="/">
           <ArrowLeft size={16} />
           Back to Projects
-        </button>
+        </Link>
         <div onClick={handleNameClick}>
           {isEditingName ? (
             <input
@@ -244,7 +240,7 @@ export default function Renderer({ id }) {
                 </div>
               </div>
             </div>
-            <form className="form" onSubmit={handleSubmit}>
+            <form className="form">
               {activeTab === "html" && (
                 <div className="field">
                   <textarea

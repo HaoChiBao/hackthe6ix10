@@ -56,6 +56,12 @@ body {
   height: 3rem;
 }
 
+.back-button {
+  border-right: 1px solid var(--border);
+  padding: 0 1rem;
+  text-decoration: none;
+}
+
 .save-button:hover,
 .back-button:hover {
   background: #e1e0e4;
@@ -172,6 +178,8 @@ textarea {
   max-width: min-content;
   text-wrap: nowrap;
   font-style: "DM Sans", sans-serif;
+  height: 2.5rem;
+  box-sizing: border-box;
 }
 
 .project-name-input:focus {
