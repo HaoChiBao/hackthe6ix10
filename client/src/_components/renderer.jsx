@@ -20,6 +20,48 @@ export default function Renderer({ id }) {
     DOMPurify.sanitize(htmlInput)
   );
 
+  const serverAddress = "ws://localhost:8080";
+  const [ws, setWS] = useState(null);
+
+  useEffect(() => {
+    window.addEventListener("click", (e) => {
+      console.log(0);
+    });
+  }, []);
+
+  useEffect(() => {
+    const initiate_WS = async () => {
+      if (ws === null) {
+        // retrieve data from the server
+        setWS(new WebSocket(serverAddress));
+        return;
+      }
+
+      console.log("Connecting to the server...");
+
+      ws.onopen = () => {
+        console.log("Connected to the server");
+      };
+
+      ws.onclose = (e) => {
+        console.log("Connection closed");
+      };
+
+      ws.onmessage = async (e) => {
+        try {
+          console.log(e);
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      };
+
+      ws.onerror = (e) => {
+        console.error("Error:", e);
+      };
+    };
+    initiate_WS();
+  }, [ws]);
+
   const projectId = id;
 
   useEffect(() => {
