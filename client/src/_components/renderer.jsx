@@ -1,46 +1,46 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import DOMPurify from "dompurify";
 
 export default function Renderer() {
-  const html = `
+  const [htmlInput, setHtmlInput] = useState(`
     <header>
-        <h1>Welcome to LoveConnect</h1>
-        <p>Find your perfect match today!</p>
+      <h1>Welcome to LoveConnect</h1>
+      <p>Find your perfect match today!</p>
     </header>
     <section class="hero">
-        <h2>Meet New People</h2>
-        <p>Join the best dating app and find your true love.</p>
+      <h2>Meet New People</h2>
+      <p>Join the best dating app and find your true love.</p>
     </section>
     <section class="features">
-        <h2>Why Choose LoveConnect?</h2>
-        <div class="feature-item">
-            <h3>Easy to Use</h3>
-            <p>Our app is user-friendly and easy to navigate.</p>
-        </div>
-        <div class="feature-item">
-            <h3>Secure</h3>
-            <p>Your privacy and security are our top priorities.</p>
-        </div>
-        <div class="feature-item">
-            <h3>Millions of Users</h3>
-            <p>Connect with millions of singles around the world.</p>
-        </div>
+      <h2>Why Choose LoveConnect?</h2>
+      <div class="feature-item">
+        <h3>Easy to Use</h3>
+        <p>Our app is user-friendly and easy to navigate.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Secure</h3>
+        <p>Your privacy and security are our top priorities.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Millions of Users</h3>
+        <p>Connect with millions of singles around the world.</p>
+      </div>
     </section>
     <section class="signup-form">
-        <h2>Sign Up Now</h2>
-        <form>
-            <input type="text" placeholder="Full Name" required>
-            <input type="email" placeholder="Email" required>
-            <input type="password" placeholder="Password" required>
-            <button type="submit">Get Started</button>
-        </form>
+      <h2>Sign Up Now</h2>
+      <form>
+        <input type="text" placeholder="Full Name" required />
+        <input type="email" placeholder="Email" required />
+        <input type="password" placeholder="Password" required />
+        <button type="submit">Get Started</button>
+      </form>
     </section>
     <footer>
-        <p>&copy; 2024 LoveConnect. All rights reserved.</p>
+      <p>&copy; 2024 LoveConnect. All rights reserved.</p>
     </footer>
-  `;
+  `);
 
-  const css = `
+  const [cssInput, setCssInput] = useState(`
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -91,28 +91,52 @@ export default function Renderer() {
       padding: 20px;
       text-align: center;
     }
-  `;
+  `);
+
+  const [sanitizedHTML, setSanitizedHTML] = useState(
+    DOMPurify.sanitize(htmlInput)
+  );
 
   useEffect(() => {
     const style = document.createElement("style");
-    style.innerHTML = css;
+    style.innerHTML = cssInput;
     document.head.appendChild(style);
 
     return () => {
       document.head.removeChild(style);
     };
-  }, [css]);
+  }, [cssInput]);
 
-  const sanitizedHTML = DOMPurify.sanitize(html);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSanitizedHTML(DOMPurify.sanitize(htmlInput));
+  };
 
   return (
     <main className="main">
-      <div className="">
-        <label for="html">HTML:</label>
-        <textarea id="html" type="text" value={html} />
-        <label for="css">CSS:</label>
-        <textarea id="css" type="text" value={css} />
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="html">HTML:</label>
+          <textarea
+            id="html"
+            value={htmlInput}
+            onChange={(e) => setHtmlInput(e.target.value)}
+            rows="10"
+            cols="50"
+          />
+        </div>
+        <div>
+          <label htmlFor="css">CSS:</label>
+          <textarea
+            id="css"
+            value={cssInput}
+            onChange={(e) => setCssInput(e.target.value)}
+            rows="10"
+            cols="50"
+          />
+        </div>
+        <button type="submit">Render</button>
+      </form>
       <div dangerouslySetInnerHTML={{ __html: sanitizedHTML }} />
     </main>
   );
