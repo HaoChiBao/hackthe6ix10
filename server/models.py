@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 
-# prompt
-class OrchestrationLayer(BaseModel):
-    prompt: str
-    html: str 
-    css: str
+# # prompt
+# class OrchestrationLayer(BaseModel):
+#     prompt: str
+#     html: str 
+#     css: str
 
 # HTML GENERATION PROMPT
 class HTMLGenerationPrompt(BaseModel):
@@ -19,4 +19,4 @@ class CSSGenerationPrompt(BaseModel):
 # RETURN MODEL
 class ReturnData(BaseModel):
     code: str
-    message: str
+    # message: str
