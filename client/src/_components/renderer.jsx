@@ -60,16 +60,6 @@ export default function Renderer() {
   },[ws])
 
   useEffect(() => {
-    const style = document.createElement("style");
-    style.innerHTML = cssInput;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, [cssInput]);
-
-  useEffect(() => {
     const iframeDocument = iframeRef.current?.contentDocument;
     if (iframeDocument) {
       iframeDocument.open();
@@ -196,10 +186,9 @@ export default function Renderer() {
             </button>
           </div>
         </div>
-        {/* <div dangerouslySetInnerHTML={{ __html: sanitizedHTML }} /> */}
         <iframe
           ref={iframeRef}
-          style={{ width: "100%", height: "500px", border: "none" }}
+          style={{ width: "100%", height: "100%", border: "none" }}
         />
       </div>
     </main>
