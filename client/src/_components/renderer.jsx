@@ -2,10 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { ArrowLeft } from "lucide-react";
 
 export default function Renderer() {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
+  const [projectName, setProjectName] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
   const iframeRef = useRef(null);
 
   const [input, setInput] = useState(``);
@@ -16,6 +19,38 @@ export default function Renderer() {
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
   );
+
+  const projectId = "sZiN5fts7q0ATyvnIo4c";
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const projectNameDoc = await getDoc(doc(db, "projects", projectId));
+
+        const htmlDoc = await getDoc(
+          doc(db, "projects", projectId, "files", "html")
+        );
+        const cssDoc = await getDoc(
+          doc(db, "projects", projectId, "files", "css")
+        );
+
+        if (htmlDoc.exists()) {
+          setHtmlInput(htmlDoc.data().value);
+        }
+
+        if (cssDoc.exists()) {
+          setCssInput(cssDoc.data().value);
+        }
+
+        if (projectNameDoc.exists()) {
+          setProjectName(projectNameDoc.data().name);
+        }
+      } catch (error) {
+        console.error("Error fetching files:", error);
+      }
+    };
+    fetchData();
+  }, [projectId]);
 
   useEffect(() => {
     const iframeDocument = iframeRef.current?.contentDocument;
@@ -75,8 +110,6 @@ export default function Renderer() {
 
   const handleSave = async () => {
     try {
-      const projectId = "sZiN5fts7q0ATyvnIo4c";
-
       await updateDoc(doc(db, "projects", projectId, "files", "html"), {
         value: htmlInput,
       });
@@ -95,12 +128,50 @@ export default function Renderer() {
     setActiveTab(tab);
   };
 
+  const handleNameClick = () => {
+    setIsEditingName(true);
+  };
+
+  const handleNameChange = (e) => {
+    setProjectName(e.target.value);
+  };
+
+  const handleNameKeyDown = async (e) => {
+    if (e.key === "Enter") {
+      try {
+        await updateDoc(doc(db, "projects", projectId), {
+          name: projectName,
+        });
+        setIsEditingName(false);
+      } catch (error) {
+        console.error("Error updating project name:", error);
+      }
+    }
+  };
+
   return (
     <main>
       <header>websitify</header>
       <div className="top-bar">
-        <button className="back-button">{"<"} Back to Projects</button>
-        <p>Project Name</p>
+        <button className="back-button">
+          <ArrowLeft size={16} />
+          Back to Projects
+        </button>
+        <div onClick={handleNameClick}>
+          {isEditingName ? (
+            <input
+              type="text"
+              value={projectName}
+              onChange={handleNameChange}
+              onKeyDown={handleNameKeyDown}
+              onBlur={() => setIsEditingName(false)}
+              className="project-name-input"
+              autoFocus
+            />
+          ) : (
+            <p className="project-name">{projectName}</p>
+          )}
+        </div>
         <div className="button-container">
           <button onClick={handleSave} className="save-button">
             Save

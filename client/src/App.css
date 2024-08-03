@@ -34,10 +34,15 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border);
+  height: 3rem;
 }
 
 .render-button {
+  display: flex;
   border-radius: 0;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
 }
 
 .save-button,
@@ -45,6 +50,10 @@ body {
   background: #fff;
   border-radius: 0;
   color: var(--brand);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 3rem;
 }
 
 .save-button:hover,
@@ -67,7 +76,7 @@ main {
 .interface {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  height: calc(100% - 4rem);
+  height: calc(100% - 7rem);
 }
 
 form {
@@ -153,4 +162,23 @@ textarea {
 .button-container {
   display: flex;
   justify-content: flex-end;
+}
+
+.project-name-input {
+  text-align: center;
+  background: white;
+  outline: none;
+  border: none;
+  max-width: min-content;
+  text-wrap: nowrap;
+  font-style: "DM Sans", sans-serif;
+}
+
+.project-name-input:focus {
+  font-style: "DM Sans", sans-serif;
+  color: var(--brand);
+}
+
+.project-name {
+  padding: 1rem;
 }
