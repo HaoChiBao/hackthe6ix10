@@ -12,7 +12,8 @@ app.use(express.static('public'));
 
 // Broadcast to all connected clients, except the sender
 function broadcast(ws, message) {
-    wss.clients.forEach((client) => {
+    projects_ids[ws.roomID].clients.forEach((client) => {
+    // wss.clients.forEach((client) => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(message);
         }
@@ -103,6 +104,13 @@ wss.on('connection', (ws) => {
                     break
 
                 case 'updateHTML':
+                    const html = data.html
+                    broadcast(ws, JSON.stringify({
+                        action: 'updateHTML',
+                        data: {
+                            html: html
+                        }
+                    }))
                     break
 
             }
@@ -125,6 +133,7 @@ wss.on('connection', (ws) => {
     
     ws.on('close', () => {
         console.log(`Client: ${ws.id} disconnected`);
+        leaveProject(ws.roomID, ws)
 
         // Broadcast the message to all clients
         // client_rooms[room].clients.forEach((client) => {

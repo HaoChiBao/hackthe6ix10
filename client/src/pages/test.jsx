@@ -20,6 +20,25 @@ const Test = () => {
         }))
     }
 
+    // Update the innerHTML of the div
+    const updateHTML = (html) => {
+        // THIS IS A TEST
+        const innerDiv = document.querySelector('.test1')
+        innerDiv.innerHTML = html
+    }
+
+    const sendWS = (message) => {
+        try {
+            if(ws === null) {
+                console.log('Websocket is not connected')
+                return
+            }
+            ws.send(JSON.stringify(message))
+        } catch (error) {
+            console.error('Error:', error)
+        }
+    }
+
     useEffect(() => {
         
         const initiate_WS = async () => {
@@ -48,7 +67,16 @@ const Test = () => {
         ws.onmessage = async (e) => {
             try {
                 const data = JSON.parse(e.data)
-                console.log(data)
+                const action = data.action
+                switch(action){
+                    case 'Welcome':
+                        // console.log(data)
+                        break
+                    case 'updateHTML':
+                        const html = data.data.html
+                        updateHTML(html)
+                        break
+                }
             } catch (error) {
                 console.error('Error:', error)
             }
@@ -61,9 +89,17 @@ const Test = () => {
         initiate_WS()
         
     },[ws])
+
     const changeInner = (e) => {
         const innerDiv = document.querySelector('.test1')
         innerDiv.innerHTML = e.target.value
+
+        sendWS({
+            action: 'updateHTML',
+            data: {
+                html: e.target.value
+            }
+        })
     }
 
     return (
