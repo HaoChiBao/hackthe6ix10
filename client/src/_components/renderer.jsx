@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
+import { db } from "../firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 export default function Renderer() {
   const [htmlInput, setHtmlInput] = useState(``);
@@ -71,6 +73,24 @@ export default function Renderer() {
     setSanitizedHTML(DOMPurify.sanitize(htmlInput));
   };
 
+  const handleSave = async () => {
+    try {
+      const projectId = "sZiN5fts7q0ATyvnIo4c";
+
+      await updateDoc(doc(db, "projects", projectId, "files", "html"), {
+        value: htmlInput,
+      });
+
+      await updateDoc(doc(db, "projects", projectId, "files", "css"), {
+        value: cssInput,
+      });
+
+      console.log("HTML and CSS saved successfully!");
+    } catch (error) {
+      console.error("Error saving files:", error);
+    }
+  };
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
@@ -78,6 +98,22 @@ export default function Renderer() {
   return (
     <main>
       <header>websitify</header>
+      <div className="top-bar">
+        <button className="back-button">{"<"} Back to Projects</button>
+        <p>Project Name</p>
+        <div className="button-container">
+          <button onClick={handleSave} className="save-button">
+            Save
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="render-button"
+          >
+            Deploy
+          </button>
+        </div>
+      </div>
       <div className="interface">
         <div className="code-panel">
           <div>
@@ -96,13 +132,6 @@ export default function Renderer() {
                   CSS
                 </div>
               </div>
-              <button
-                type="submit"
-                onClick={handleSubmit}
-                className="render-button"
-              >
-                Render
-              </button>
             </div>
             <form className="form" onSubmit={handleSubmit}>
               {activeTab === "html" && (

@@ -29,6 +29,29 @@ body {
   font-family: "DM Sans", sans-serif;
 }
 
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.render-button {
+  border-radius: 0;
+}
+
+.save-button,
+.back-button {
+  background: #fff;
+  border-radius: 0;
+  color: var(--brand);
+}
+
+.save-button:hover,
+.back-button:hover {
+  background: #e1e0e4;
+}
+
 header {
   padding: 0 24px;
   height: 4rem;
@@ -69,11 +92,6 @@ form {
 
 .tabs {
   display: flex;
-}
-
-.tab-container button {
-  border-radius: 0;
-  height: 100% !important;
 }
 
 .tab-active {
@@ -130,4 +148,9 @@ textarea {
   font-size: 1rem;
   overflow: scroll;
   resize: none;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
 }
