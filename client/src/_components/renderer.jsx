@@ -25,7 +25,8 @@ export default function Renderer({ id }) {
   );
 
   const [innerText, setInnerText] = useState("...");
-  const serverAddress = "ws://localhost:8080";
+  let serverAddress = "ws://localhost:8080";
+  // serverAddress = "ws://hack-the-6ix10.glitch.me/";
   const [ws, setWS] = useState(null);
 
   const TEST_ROOM = "TEST_ROOM";
@@ -79,6 +80,14 @@ export default function Renderer({ id }) {
       },
     });
   };
+
+  const handleHTMLDown = (e) => {
+
+  }
+
+  const handleCSSDown = (e) => {
+
+  }
 
   // Update the innerHTML of the div
   const updateHTML = (html) => {
@@ -211,10 +220,6 @@ export default function Renderer({ id }) {
   };
 
   const changeInnerHTML = (e) => {
-    // find textfield selectionstart and selectionend
-    const selectionStart = e.target.selectionStart;
-    const selectionEnd = e.target.selectionEnd;
-    console.log(selectionStart, selectionEnd);
 
     const html = e.target.value;
     updateHTML(html);
@@ -383,6 +388,7 @@ export default function Renderer({ id }) {
                     id="html"
                     value={htmlInput}
                     onChange={changeInnerHTML}
+                    onMouseDown={handleHTMLDown}
                     rows="20"
                     cols="50"
                   />
@@ -395,6 +401,7 @@ export default function Renderer({ id }) {
                     id="css"
                     value={cssInput}
                     onChange={changeInnerCSS}
+                    onMouseDown={handleCSSDown}
                     rows="20"
                     cols="50"
                   />

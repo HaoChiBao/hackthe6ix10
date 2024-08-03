@@ -2,13 +2,20 @@
     height: 20px;
     width: 20px;
     position: fixed;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    transform: translate(-30%, -30%);
+    user-select: none;
+    pointer-events: none;
 }
 
 .client-cursor img {
     height: 100%;
     width: 100%;
 
-    user-select: none;
     /* filter: drop-shadow(1.3px 0 0 red) 
             drop-shadow(0 1.3px 0 red)
             drop-shadow(-1.3px 0 0 red) 
