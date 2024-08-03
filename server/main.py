@@ -60,6 +60,7 @@ def get_new(previous: str, response: str) -> str:
 @app.websocket("/ws/generateHTML")
 async def websocket_generate_html(websocket: WebSocket):
     await websocket.accept()
+    print("Client connected")
     try:
         while True:
             data = await websocket.receive_json()
