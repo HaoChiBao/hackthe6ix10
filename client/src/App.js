@@ -1,11 +1,12 @@
 import Renderer from "./_components/renderer.jsx";
 import "./App.css";
+import {Routes, Route} from "react-router-dom";
 
 function App() {
   return (
-    <div className="App">
-      <Renderer />
-    </div>
+    <Routes>
+      <Route path="/" element={<Renderer />} />
+    </Routes>
   );
 }
 
