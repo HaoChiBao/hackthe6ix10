@@ -10,6 +10,7 @@ const Test = () => {
     const TEST_ROOM = 'TEST_ROOM'
 
     const testFunc = () => {
+        return
         ws.send(JSON.stringify({
             action: 'TEST',
             data: [
@@ -20,15 +21,16 @@ const Test = () => {
         }))
     }
 
-    // Update the innerHTML of the div
-    const updateHTML = (html) => {
-        // THIS IS A TEST
-        const innerDiv = document.querySelector('.test1')
-        innerDiv.innerHTML = html
-    }
-
-    const updateCSS = (css) => {
-
+    const handleSubmit = () => {
+        console.log(innerText)
+        sendWS({
+            action: 'generateNew',
+            data: {
+                prompt: innerText,
+                html: '',
+                css: ''
+            }
+        })
     }
 
     const sendWS = (message) => {
@@ -94,33 +96,18 @@ const Test = () => {
         
     },[ws])
 
-    const changeInner = (e) => {
-        // find textfield selectionstart and selectionend
-        const selectionStart = e.target.selectionStart
-        const selectionEnd = e.target.selectionEnd
-        console.log(selectionStart, selectionEnd)
-
-        const html = e.target.value
-        updateHTML(html)
-        
-        sendWS({
-            action: 'updateHTML',
-            data: {
-                html
-            }
-        })
-    }
-
     return (
         <div className="App" onClick={testFunc}>
-        
-            <div className="test1">
 
-            </div>
-
-            <textarea className="test2" onChange={changeInner}>
+            <textarea className="test2" onChange={(e) => setInnerText(e.target.value)}>
                 {innerText}
             </textarea>
+
+            <button onClick={handleSubmit}>Submit</button>
+
+            <div className="response">
+                ...
+            </div>
 
         </div>
     )

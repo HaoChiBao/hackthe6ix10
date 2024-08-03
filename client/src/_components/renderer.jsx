@@ -15,28 +15,68 @@ export default function Renderer() {
     DOMPurify.sanitize(htmlInput)
   );
 
+  useEffect(() => {
+    window.addEventListener('mousemove', (e) => {
+      // console.log(e.x, e.y)
+    })
+  },[]);
+  const [innerText, setInnerText] = useState("...")
   const serverAddress = 'ws://localhost:8080'
   const [ws, setWS] = useState(null)
 
-  useEffect(() => {
-    window.addEventListener('click', (e) => {
-      console.log(0)
-    })
-  },[]);
+  const TEST_ROOM = 'TEST_ROOM'
+
+  const testFunc = () => {
+      ws.send(JSON.stringify({
+          action: 'TEST',
+          data: [
+              {'test': 'test'},
+              {'test': 'test'},
+              {'test': 'test'}
+          ]
+      }))
+  }
+
+  // Update the innerHTML of the div
+  const updateHTML = (html) => {
+      setHtmlInput(html)
+  }
+
+  const updateCSS = (css) => {
+      setCssInput(css)
+  }
+
+  const sendWS = (message) => {
+      try {
+          if(ws === null) {
+              console.log('Websocket is not connected')
+              return
+          }
+          ws.send(JSON.stringify(message))
+      } catch (error) {
+          console.error('Error:', error)
+      }
+  }
 
   useEffect(() => {
-    
-    const initiate_WS = async () => {
+      
+      const initiate_WS = async () => {
       if(ws === null) {
-        // retrieve data from the server 
-        setWS(new WebSocket(serverAddress))
-        return
-      }
+          // retrieve data from the server 
+          setWS(new WebSocket(serverAddress))
+          return
+      } 
 
       console.log('Connecting to the server...')
 
       ws.onopen = () => {
           console.log('Connected to the server');
+          ws.send(JSON.stringify({
+              action: 'join_project',
+              data: {
+                  roomID: TEST_ROOM
+              }
+          }))
       };
 
       ws.onclose = (e) => {
@@ -45,7 +85,23 @@ export default function Renderer() {
 
       ws.onmessage = async (e) => {
           try {
-            console.log(e)
+              const message = JSON.parse(e.data)
+              const action = message.action
+              const data = message.data
+              console.log(message)
+              switch(action){
+                  case 'Welcome':
+                      // console.log(data)
+                      break
+                  case 'updateHTML':
+                      const html = data.html
+                      updateHTML(html)
+                      break
+                  case 'updateCSS':
+                      const css = data.css
+                      updateCSS(css)
+                      break
+              }
           } catch (error) {
               console.error('Error:', error)
           }
@@ -54,10 +110,39 @@ export default function Renderer() {
       ws.onerror = (e) => {
           console.error('Error:', e)
       }
-    }
-    initiate_WS()
-    
+      }
+      initiate_WS()
+      
   },[ws])
+
+  const changeInnerCSS = (e) => {
+      const css = e.target.value
+      updateCSS(css)
+
+      sendWS({
+          action: 'updateCSS',
+          data: {
+              css
+          }
+      })
+  }
+
+  const changeInnerHTML = (e) => {
+      // find textfield selectionstart and selectionend
+      const selectionStart = e.target.selectionStart
+      const selectionEnd = e.target.selectionEnd
+      console.log(selectionStart, selectionEnd)
+
+      const html = e.target.value
+      updateHTML(html)
+      
+      sendWS({
+          action: 'updateHTML',
+          data: {
+              html
+          }
+      })
+  }
 
   useEffect(() => {
     const iframeDocument = iframeRef.current?.contentDocument;
@@ -154,7 +239,7 @@ export default function Renderer() {
                   <textarea
                     id="html"
                     value={htmlInput}
-                    onChange={(e) => setHtmlInput(e.target.value)}
+                    onChange={changeInnerHTML}
                     rows="20"
                     cols="50"
                   />
@@ -166,7 +251,7 @@ export default function Renderer() {
                   <textarea
                     id="css"
                     value={cssInput}
-                    onChange={(e) => setCssInput(e.target.value)}
+                    onChange={changeInnerCSS}
                     rows="20"
                     cols="50"
                   />
