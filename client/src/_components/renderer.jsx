@@ -3,49 +3,78 @@ import DOMPurify from "dompurify";
 
 export default function Renderer() {
   const [htmlInput, setHtmlInput] = useState(`
-    <header>
-      <h1>Welcome to LoveConnect</h1>
-      <p>Find your perfect match today!</p>
+    <body>
+    <header class="header">
+        <div class="container">
+            <h1 class="header-title">Welcome to CRM System</h1>
+            <p class="header-subtitle">Streamline your customer relationships with ease</p>
+            <a href="#features" class="cta-button">Learn More</a>
+        </div>
     </header>
+
     <section class="hero">
-      <h2>Meet New People</h2>
-      <p>Join the best dating app and find your true love.</p>
+        <div class="container">
+            <img src="path/to/hero-image.jpg" alt="CRM dashboard overview" class="hero-image">
+            <h2 class="hero-heading">Transform Your Customer Experience</h2>
+            <p class="hero-description">Our CRM solution provides you with all the tools you need to manage and enhance customer interactions.</p>
+            <a href="#get-started" class="cta-button">Get Started</a>
+        </div>
     </section>
-    <section class="features">
-      <h2>Why Choose LoveConnect?</h2>
-      <div class="feature-item">
-        <h3>Easy to Use</h3>
-        <p>Our app is user-friendly and easy to navigate.</p>
-      </div>
-      <div class="feature-item">
-        <h3>Secure</h3>
-        <p>Your privacy and security are our top priorities.</p>
-      </div>
-      <div class="feature-item">
-        <h3>Millions of Users</h3>
-        <p>Connect with millions of singles around the world.</p>
-      </div>
+
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="features-title">Features</h2>
+            <div class="features-list">
+                <div class="feature-item">
+                    <img src="path/to/feature1-image.jpg" alt="Feature 1 description" class="feature-image">
+                    <h3 class="feature-title">Feature 1</h3>
+                    <p class="feature-description">Description of feature 1.</p>
+                </div>
+                <div class="feature-item">
+                    <img src="path/to/feature2-image.jpg" alt="Feature 2 description" class="feature-image">
+                    <h3 class="feature-title">Feature 2</h3>
+                    <p class="feature-description">Description of feature 2.</p>
+                </div>
+                <div class="feature-item">
+                    <img src="path/to/feature3-image.jpg" alt="Feature 3 description" class="feature-image">
+                    <h3 class="feature-title">Feature 3</h3>
+                    <p class="feature-description">Description of feature 3.</p>
+                </div>
+            </div>
+        </div>
     </section>
-    <section class="signup-form">
-      <h2>Sign Up Now</h2>
-      <form>
-        <input type="text" placeholder="Full Name" required />
-        <input type="email" placeholder="Email" required />
-        <input type="password" placeholder="Password" required />
-        <button type="submit">Get Started</button>
-      </form>
+
+    <section class="testimonial">
+        <div class="container">
+            <h2 class="testimonial-title">What Our Customers Say</h2>
+            <blockquote class="testimonial-quote">
+                <p class="quote-text">"This CRM system has transformed our customer management process. Highly recommend!"</p>
+                <footer class="quote-author">— Customer Name, Company</footer>
+            </blockquote>
+        </div>
     </section>
-    <footer>
-      <p>&copy; 2024 LoveConnect. All rights reserved.</p>
+
+    <section class="call-to-action" id="get-started">
+        <div class="container">
+            <h2 class="cta-title">Ready to Enhance Your Customer Management?</h2>
+            <a href="signup.html" class="cta-button">Sign Up Now</a>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">&copy; 2024 CRM System. All rights reserved.</p>
+            <ul class="footer-links">
+                <li><a href="#privacy-policy">Privacy Policy</a></li>
+                <li><a href="#terms-of-service">Terms of Service</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+            </ul>
+        </div>
     </footer>
+</body>
   `);
 
   const [cssInput, setCssInput] = useState(`
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
     header {
       background-color: #ff6f61;
       color: white;
@@ -68,22 +97,6 @@ export default function Renderer() {
     }
     .feature-item {
       margin-bottom: 20px;
-    }
-    .signup-form {
-      background-color: #f8f8f8;
-      padding: 50px 20px;
-      text-align: center;
-    }
-    .signup-form form {
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    .signup-form input, .signup-form button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
     }
     footer {
       background-color: #333;
@@ -114,7 +127,7 @@ export default function Renderer() {
 
   return (
     <main className="main">
-      <form onSubmit={handleSubmit}>
+      <form className="form" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="html">HTML:</label>
           <textarea
