@@ -27,6 +27,10 @@ const Test = () => {
         innerDiv.innerHTML = html
     }
 
+    const updateCSS = (css) => {
+
+    }
+
     const sendWS = (message) => {
         try {
             if(ws === null) {
@@ -91,13 +95,18 @@ const Test = () => {
     },[ws])
 
     const changeInner = (e) => {
-        const innerDiv = document.querySelector('.test1')
-        innerDiv.innerHTML = e.target.value
+        // find textfield selectionstart and selectionend
+        const selectionStart = e.target.selectionStart
+        const selectionEnd = e.target.selectionEnd
+        console.log(selectionStart, selectionEnd)
 
+        const html = e.target.value
+        updateHTML(html)
+        
         sendWS({
             action: 'updateHTML',
             data: {
-                html: e.target.value
+                html
             }
         })
     }
