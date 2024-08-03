@@ -27,6 +27,7 @@ app.add_middleware(
 # Initialize the OpenAI client with the API key from .env
 openai_api_key = os.getenv("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=openai_api_key)
+print(openai_api_key)
 # Patch the OpenAI client
 client = instructor.from_openai(OpenAI())
 

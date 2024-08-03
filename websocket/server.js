@@ -231,35 +231,3 @@ const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
-
-//GITHUB API
-
-const createRepo = async (repoName) => {
-  const token = "YOUR_PERSONAL_ACCESS_TOKEN"; // Replace with your actual token
-  const url = "https://api.github.com/user/repos";
-
-  const data = {
-    name: repoName,
-    description: "This is your new repository",
-    private: false, // or true if you want to create a private repository
-  };
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `token ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message);
-  }
-
-  const repo = await response.json();
-  console.log("Repository created:", repo);
-};
-
-createRepo("my-new-repo");

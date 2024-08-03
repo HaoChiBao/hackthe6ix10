@@ -37,21 +37,5 @@ export default function Renderer({ id }) {
     fetchData();
   }, [id]);
 
-  const handleSave = async () => {
-    try {
-      await updateDoc(doc(db, "projects", id, "files", "html"), {
-        value: htmlInput,
-      });
-
-      await updateDoc(doc(db, "projects", id, "files", "css"), {
-        value: cssInput,
-      });
-
-      console.log("HTML and CSS saved successfully!");
-    } catch (error) {
-      console.error("Error saving files:", error);
-    }
-  };
-
   return <main></main>;
 }

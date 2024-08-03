@@ -5,7 +5,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { db } from "../firebase";
 import cursorAsset from "../assets/cursor.png";
-
 import "./renderer.css";
 
 export default function Renderer({ id }) {
@@ -14,7 +13,6 @@ export default function Renderer({ id }) {
   const [projectName, setProjectName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const iframeRef = useRef(null);
-
   const [input, setInput] = useState(``);
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
@@ -25,7 +23,8 @@ export default function Renderer({ id }) {
   );
 
   const [innerText, setInnerText] = useState("...");
-  const serverAddress = "ws://localhost:8080";
+  // const serverAddress = "ws://localhost:8080";
+  const serverAddress = "ws://hack-the-6ix10.glitch.me/";
   const [ws, setWS] = useState(null);
 
   const TEST_ROOM = "TEST_ROOM";
@@ -42,7 +41,6 @@ export default function Renderer({ id }) {
   const updateCursor = (cursor, id) => {
     let cursorElement = document.getElementById(id);
     if (cursorElement === null || cursorElement === undefined) {
-      // create a new cursor element
       cursorElement = document.createElement("div");
       cursorElement.className = "client-cursor";
       cursorElement.id = id;
@@ -53,17 +51,12 @@ export default function Renderer({ id }) {
 
       const colours = ["red", "blue", "green", "purple", "orange", "pink"];
       const color = colours[Math.floor(Math.random() * colours.length)];
-      // filter: drop-shadow(1.3px 0 0 red)
-      //       drop-shadow(0 1.3px 0 red)
-      //       drop-shadow(-1.3px 0 0 red)
-      //       drop-shadow(0 -1.3px 0 red);
       cursorElement.style.filter = `drop-shadow(1.3px 0 0 ${color}) drop-shadow(0 1.3px 0 ${color}) drop-shadow(-1.3px 0 0 ${color}) drop-shadow(0 -1.3px 0 ${color})`;
 
       document.body.appendChild(cursorElement);
     }
     cursorElement.style.left = cursor.x + "px";
     cursorElement.style.top = cursor.y + "px";
-    // console.log(cursorElement)
   };
 
   const handleMouseMove = (e) => {
@@ -80,7 +73,6 @@ export default function Renderer({ id }) {
     });
   };
 
-  // Update the innerHTML of the div
   const updateHTML = (html) => {
     setHtmlInput(html);
   };
@@ -98,22 +90,17 @@ export default function Renderer({ id }) {
       ws.send(JSON.stringify(message));
     } catch (error) {
       console.error("Send WS Error");
-      // console.error('Error:', error)
     }
   };
 
   useEffect(() => {
     const initiate_WS = async () => {
       if (ws === null) {
-        // retrieve data from the server
         setWS(new WebSocket(serverAddress));
         return;
       }
 
-      console.log("Connecting to the server...");
-
       ws.onopen = () => {
-        console.log("Connected to the server");
         ws.send(
           JSON.stringify({
             action: "join_project",
@@ -124,19 +111,15 @@ export default function Renderer({ id }) {
         );
       };
 
-      ws.onclose = (e) => {
-        console.log("Connection closed");
-      };
+      ws.onclose = (e) => {};
 
       ws.onmessage = async (e) => {
         try {
           const message = JSON.parse(e.data);
           const action = message.action;
           const data = message.data;
-          // console.log(message)
           switch (action) {
             case "Welcome":
-              // console.log(data)
               break;
             case "updateHTML":
               const html = data.html;
@@ -172,11 +155,9 @@ export default function Renderer({ id }) {
   }, [ws]);
 
   useEffect(() => {
-    console.log("ID:" + id);
     const fetchData = async () => {
       try {
         const projectNameDoc = await getDoc(doc(db, "projects", id));
-
         const htmlDoc = await getDoc(doc(db, "projects", id, "files", "html"));
         const cssDoc = await getDoc(doc(db, "projects", id, "files", "css"));
 
@@ -201,7 +182,6 @@ export default function Renderer({ id }) {
   const changeInnerCSS = (e) => {
     const css = e.target.value;
     updateCSS(css);
-
     sendWS({
       action: "updateCSS",
       data: {
@@ -211,14 +191,10 @@ export default function Renderer({ id }) {
   };
 
   const changeInnerHTML = (e) => {
-    // find textfield selectionstart and selectionend
     const selectionStart = e.target.selectionStart;
     const selectionEnd = e.target.selectionEnd;
-    console.log(selectionStart, selectionEnd);
-
     const html = e.target.value;
     updateHTML(html);
-
     sendWS({
       action: "updateHTML",
       data: {
@@ -240,7 +216,17 @@ export default function Renderer({ id }) {
         </html>
       `);
       iframeDocument.close();
+
+      iframeDocument.addEventListener("mouseover", handleIframeMouseOver);
+      iframeDocument.addEventListener("mouseout", handleIframeMouseOut);
     }
+
+    return () => {
+      if (iframeDocument) {
+        iframeDocument.removeEventListener("mouseover", handleIframeMouseOver);
+        iframeDocument.removeEventListener("mouseout", handleIframeMouseOut);
+      }
+    };
   }, [htmlInput, cssInput]);
 
   useEffect(() => {
@@ -271,12 +257,10 @@ export default function Renderer({ id }) {
       recognition.stop();
     } else {
       recognition.start();
-      console.log(
-        "Speech recognition started. Try speaking into the microphone."
-      );
     }
     setIsRecording(!isRecording);
   };
+
   const handleDeploy = async () => {
     console.log("Deploying project...");
   };
@@ -322,8 +306,70 @@ export default function Renderer({ id }) {
     }
   };
 
+  const handleIframeMouseOver = (e) => {
+    const element = e.target;
+    const rect = element.getBoundingClientRect();
+    element.style.outline = "1px solid #3b32a0";
+    element.style.borderRadius = "4px";
+    element.style.cursor = "default";
+
+    const html = iframeRef.current.contentDocument.documentElement.outerHTML;
+    const elementHtml = element.outerHTML;
+
+    highlightCode(elementHtml);
+  };
+
+  const handleIframeMouseOut = (e) => {
+    const tooltip = document.getElementById("tooltip");
+    tooltip.style.display = "none";
+
+    const element = e.target;
+    element.style.outline = "none";
+
+    clearHighlight();
+  };
+
+  const highlightCode = (elementHtml) => {
+    // Remove the style attribute from the elementHtml
+    const elementHtmlWithoutStyle = elementHtml.replace(/ style="[^"]*"/g, "");
+
+    const textarea = document.getElementById(
+      activeTab === "html" ? "html" : "css"
+    );
+
+    const code = htmlInput;
+    const startIndex = code.indexOf(elementHtmlWithoutStyle);
+    console.log(code, startIndex, elementHtmlWithoutStyle);
+
+    if (startIndex !== -1) {
+      textarea.setSelectionRange(
+        startIndex,
+        startIndex + elementHtmlWithoutStyle.length
+      );
+      textarea.focus();
+    }
+  };
+
+  const clearHighlight = () => {
+    const textarea = document.getElementById(
+      activeTab === "html" ? "html" : "css"
+    );
+    textarea.setSelectionRange(0, 0);
+    textarea.blur();
+  };
+
   return (
     <main onMouseMove={handleMouseMove}>
+      <div
+        id="tooltip"
+        style={{
+          position: "absolute",
+          display: "none",
+          backgroundColor: "yellow",
+          padding: "5px",
+          borderRadius: "5px",
+        }}
+      ></div>
       <div className="top-bar">
         <Link className="back-button" to="/">
           <ArrowLeft size={16} />
@@ -388,7 +434,6 @@ export default function Renderer({ id }) {
                   />
                 </div>
               )}
-
               {activeTab === "css" && (
                 <div className="field">
                   <textarea
