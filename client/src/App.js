@@ -1,9 +1,10 @@
-import './App.css';
+import Renderer from "./_components/renderer";
+import "./App.css";
 
 function App() {
   return (
     <div className="App">
-      hi
+      <Renderer />
     </div>
   );
 }
