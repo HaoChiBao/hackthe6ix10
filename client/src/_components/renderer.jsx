@@ -25,7 +25,6 @@ export default function Renderer({ id }) {
     DOMPurify.sanitize(htmlInput)
   );
 
-  const [innerText, setInnerText] = useState("...");
   const serverAddress = "ws://localhost:8080";
   const [ws, setWS] = useState(null);
 
@@ -36,15 +35,6 @@ export default function Renderer({ id }) {
   }, []);
 
   const TEST_ROOM = "TEST_ROOM";
-
-  const testFunc = () => {
-    ws.send(
-      JSON.stringify({
-        action: "TEST",
-        data: [{ test: "test" }, { test: "test" }, { test: "test" }],
-      })
-    );
-  };
 
   const updateCursor = (cursor, id) => {
     let cursorElement = document.getElementById(id);
@@ -137,48 +127,43 @@ export default function Renderer({ id }) {
 
       ws.onmessage = async (e) => {
         try {
-          console.log(e);
+          const message = JSON.parse(e.data);
+          const action = message.action;
+          const data = message.data;
+          // console.log(message)
+          switch (action) {
+            case "Welcome":
+              // console.log(data)
+              break;
+            case "updateHTML":
+              const html = data.html;
+              updateHTML(html);
+              break;
+            case "updateCSS":
+              const css = data.css;
+              updateCSS(css);
+              break;
+            case "updateCursor":
+              const cursor = data.cursor;
+              const id = data.id;
+              updateCursor(cursor, id);
+              break;
+            case "client_disconnected":
+              const client_id = data.ws_id;
+              const client_cursor = document.getElementById(client_id);
+              if (client_cursor !== null) {
+                client_cursor.remove();
+              }
+              break;
+          }
         } catch (error) {
           console.error("Error:", error);
         }
       };
-      try {
-        const message = JSON.parse(e.data);
-        const action = message.action;
-        const data = message.data;
-        // console.log(message)
-        switch (action) {
-          case "Welcome":
-            // console.log(data)
-            break;
-          case "updateHTML":
-            const html = data.html;
-            updateHTML(html);
-            break;
-          case "updateCSS":
-            const css = data.css;
-            updateCSS(css);
-            break;
-          case "updateCursor":
-            const cursor = data.cursor;
-            const id = data.id;
-            updateCursor(cursor, id);
-            break;
-          case "client_disconnected":
-            const client_id = data.ws_id;
-            const client_cursor = document.getElementById(client_id);
-            if (client_cursor !== null) {
-              client_cursor.remove();
-            }
-            break;
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    };
 
-    ws.onerror = (e) => {
-      console.error("Error:", e);
+      ws.onerror = (e) => {
+        console.error("Error:", e);
+      };
     };
 
     initiate_WS();
