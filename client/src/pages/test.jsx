@@ -111,4 +111,47 @@ const Test = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Test;
+=======
+        ws.onmessage = async (e) => {
+            try {
+                const data = JSON.parse(e.data)
+                const action = data.action
+                switch(action){
+                    case 'Welcome':
+                        // console.log(data)
+                        break
+                }
+            } catch (error) {
+                console.error('Error:', error)
+            }
+        }
+
+        ws.onerror = (e) => {
+            console.error('Error:', e)
+        }
+        }
+        initiate_WS()
+        
+    },[ws])
+
+    return (
+        <div className="App" onClick={testFunc}>
+
+            <textarea className="test2" onChange={(e) => setInnerText(e.target.value)}>
+                {innerText}
+            </textarea>
+
+            <button onClick={handleSubmit}>Submit</button>
+
+            <div className="response">
+                ...
+            </div>
+
+        </div>
+    )
+}
+
+export default Test
+>>>>>>> main

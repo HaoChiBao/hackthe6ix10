@@ -1,0 +1,16 @@
+.client-cursor{
+    height: 20px;
+    width: 20px;
+    position: fixed;
+}
+
+.client-cursor img {
+    height: 100%;
+    width: 100%;
+
+    user-select: none;
+    /* filter: drop-shadow(1.3px 0 0 red) 
+            drop-shadow(0 1.3px 0 red)
+            drop-shadow(-1.3px 0 0 red) 
+            drop-shadow(0 -1.3px 0 red); */
+}
