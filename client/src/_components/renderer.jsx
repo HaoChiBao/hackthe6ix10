@@ -29,8 +29,9 @@ export default function Renderer({ id }) {
   );
 
   const [innerText, setInnerText] = useState("...");
+
   let serverAddress = "ws://localhost:8080";
-  //   const serverAddress = "ws://hack-the-6ix10.glitch.me/";
+  const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
   const [ws, setWS] = useState(null);
 
   const navigate = useNavigate();
