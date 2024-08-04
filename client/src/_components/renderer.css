@@ -21,3 +21,11 @@
             drop-shadow(-1.3px 0 0 red) 
             drop-shadow(0 -1.3px 0 red); */
 }
+
+.blinking-cursor{
+    width: 2px;
+    height: 1rem;
+    background-color: rgb(41, 134, 255);
+    border-radius: 5px;
+    position: absolute;
+}

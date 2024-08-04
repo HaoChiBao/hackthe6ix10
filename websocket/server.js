@@ -3,6 +3,7 @@ const express = require("express");
 const http = require("http");
 const { send } = require("process");
 const WebSocket = require("ws");
+const cors = require("cors");
 
 const app = express();
 const server = http.createServer(app);
@@ -11,14 +12,22 @@ const wss = new WebSocket.Server({ server });
 // Serve static files (if needed)
 app.use(express.static("public"));
 
+// add cors
+app.use(cors());
+
 // Broadcast to all connected clients, except the sender
 function broadcast(ws, message) {
-  projects_ids[ws.roomID].clients.forEach((client) => {
-    // wss.clients.forEach((client) => {
-    if (client !== ws && client.readyState === WebSocket.OPEN) {
-      client.send(message);
+    try {
+        if(ws.roomID === null) return;
+        projects_ids[ws.roomID].clients.forEach((client) => {
+            // wss.clients.forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(message);
+            }
+        });
+    } catch (error) {
+        console.error("Error:", error);
     }
-  });
 }
 
 const projects_ids = {
@@ -243,6 +252,21 @@ wss.on("connection", (ws) => {
             })
           );
           break;
+        
+        case "updateBlinkingCursor":
+            console.log("Blinking Cursor: ", data.position);
+            const position = data.position;
+            broadcast(
+                ws,
+                JSON.stringify({
+                action,
+                data: {
+                    position,
+                    id: ws.id,
+                },
+                })
+            );
+            break;
       }
 
       //

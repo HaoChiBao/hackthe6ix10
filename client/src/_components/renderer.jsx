@@ -41,12 +41,12 @@ export default function Renderer({ id }) {
   };
 
   const updateCursor = (cursor, id) => {
-    let cursorElement = document.getElementById(id);
+    let cursorElement = document.getElementById(`${id}-cursor`);
     if (cursorElement === null || cursorElement === undefined) {
       // create a new cursor element
       cursorElement = document.createElement("div");
       cursorElement.className = "client-cursor";
-      cursorElement.id = id;
+      cursorElement.id = id + "-cursor";
 
       const cursorImage = document.createElement("img");
       cursorImage.src = cursorAsset;
@@ -67,6 +67,22 @@ export default function Renderer({ id }) {
     // console.log(cursorElement)
   };
 
+  const updateBlinkingCursor = (position, id) => {
+    let cursorElement = document.getElementById(`${id}-blinking-cursor`);
+
+    if (cursorElement === null || cursorElement === undefined) {
+      // create a new cursor element
+      cursorElement = document.createElement("div");
+      cursorElement.className = "blinking-cursor";
+      cursorElement.id = id + '-blinking-cursor';
+
+      document.body.appendChild(cursorElement);
+    }
+
+    cursorElement.style.left = position.x + "px";
+    cursorElement.style.top = position.y + "px";
+  }
+
   const handleMouseMove = (e) => {
     const cursor = {
       x: e.clientX,
@@ -81,12 +97,51 @@ export default function Renderer({ id }) {
     });
   };
 
-  const handleHTMLDown = (e) => {
-
+  const handleClientBlinkingCursor = (e) => {
+    try {
+      const textInput = e.target
+      const position = textInput.selectionStart;
+      // console.log(position)
+      const { top, left } = getCaretCoordinates(textInput, position);
+      // console.log(top, left)
+      // blinkingCursor.style.top = `${top}px`;
+      // blinkingCursor.style.left = `${left}px`;
+      if(position === 0) return
+      sendWS({
+          action: "updateBlinkingCursor",
+          data: {
+              position: { x: left, y: top },
+          }
+      })
+    } catch (error) {
+      console.error("Error updating cursor position:", error);
+    }
   }
 
-  const handleCSSDown = (e) => {
+  const getCaretCoordinates = (element, position) => {
+      const div = document.createElement('div');
+      const text = element.value.substring(0, position);
+      const styles = getComputedStyle(element);
+      const bounding = element.getBoundingClientRect();
 
+      for (const prop of styles) {
+          div.style[prop] = styles[prop];
+      }
+
+      div.style.position = 'absolute';
+      div.style.whiteSpace = 'pre-wrap';
+      div.style.visibility = 'hidden';
+      div.textContent = text;
+      document.body.appendChild(div);
+
+      const span = document.createElement('span');
+      span.textContent = element.value[position] || '.';
+      div.appendChild(span);
+
+      const { offsetTop: top, offsetLeft: left } = span;
+      document.body.removeChild(div);
+
+      return { top: top + bounding.top, left };
   }
 
   // Update the innerHTML of the div
@@ -159,6 +214,11 @@ export default function Renderer({ id }) {
               const cursor = data.cursor;
               const id = data.id;
               updateCursor(cursor, id);
+              break;
+            case "updateBlinkingCursor":
+              const position = data.position;
+              const blink_id = data.id;
+              updateBlinkingCursor(position, blink_id);
               break;
             case "client_disconnected":
               const client_id = data.ws_id;
@@ -388,7 +448,11 @@ export default function Renderer({ id }) {
                     id="html"
                     value={htmlInput}
                     onChange={changeInnerHTML}
-                    onMouseDown={handleHTMLDown}
+
+                    onInput={handleClientBlinkingCursor}
+                    onClick={handleClientBlinkingCursor}
+                    onKeyUp={handleClientBlinkingCursor}
+
                     rows="20"
                     cols="50"
                   />
@@ -401,7 +465,7 @@ export default function Renderer({ id }) {
                     id="css"
                     value={cssInput}
                     onChange={changeInnerCSS}
-                    onMouseDown={handleCSSDown}
+                    // onMouseUp={handleCSSDown}
                     rows="20"
                     cols="50"
                   />
