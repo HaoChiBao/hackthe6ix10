@@ -1,6 +1,14 @@
 import DOMPurify from "dompurify";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { ArrowLeft, EyeIcon, RocketIcon, SaveIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  EyeIcon,
+  Mic,
+  MicIcon,
+  MicOffIcon,
+  RocketIcon,
+  SaveIcon,
+} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
@@ -18,29 +26,29 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 
-import defaultPfp0 from "../assets/cat.png"
-import defaultPfp1 from "../assets/panda.png"
-import defaultPfp2 from "../assets/rabbit.png"
+import defaultPfp0 from "../assets/cat.png";
+import defaultPfp1 from "../assets/panda.png";
+import defaultPfp2 from "../assets/rabbit.png";
 
 import debounce from "lodash.debounce";
 
-const pfpList = [defaultPfp0, defaultPfp1, defaultPfp2]
+const pfpList = [defaultPfp0, defaultPfp1, defaultPfp2];
 
-const SessionClient = ({ imgSrc , id}) => {
+const SessionClient = ({ imgSrc, id }) => {
   useEffect(() => {
-    if(imgSrc === null) {
+    if (imgSrc === null) {
       // imgSrc = "https://www.gravatar.com/avatar/
-      console.log(0)
+      console.log(0);
     }
-  },[])
+  }, []);
   return (
-    <div className="session-client" id = {`${id}-pfp`}>
+    <div className="session-client" id={`${id}-pfp`}>
       <img src={imgSrc} alt="Client" />
     </div>
-  )
-}
+  );
+};
 
-const Renderer = ({ id }) => {
+export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
   const [projectName, setProjectName] = useState("");
@@ -50,8 +58,7 @@ const Renderer = ({ id }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
-  const [selectedElement, setSelectedElement] = useState(null);
-  const htmlEditorRef = useRef(null);
+  const [activeIframe, setActiveIframe] = useState("iframe1");
 
   const [sessionClients, setSessionClients] = useState([
     // {imgSrc: defaultPfp0},
@@ -59,14 +66,14 @@ const Renderer = ({ id }) => {
     // {imgSrc: defaultPfp2, id : "2"},
   ]);
 
-  const [blinkingPosition, setBlinkingPosition] = useState({x:0,y:0});
+  const [blinkingPosition, setBlinkingPosition] = useState({ x: 0, y: 0 });
 
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
   );
 
   const [innerText, setInnerText] = useState("...");
-    // let serverAddress = "ws://localhost:8080";
+  // let serverAddress = "ws://localhost:8080";
   const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
 
   const [user, setUser] = useState(null);
@@ -75,7 +82,7 @@ const Renderer = ({ id }) => {
   const createSessionClient = (id) => {
     const sessionClient = document.createElement("div");
     sessionClient.className = "session-client";
-    sessionClient.id = id+"-pfp";
+    sessionClient.id = id + "-pfp";
 
     const img = document.createElement("img");
     img.src = pfpList[Math.floor(Math.random() * pfpList.length)];
@@ -84,7 +91,7 @@ const Renderer = ({ id }) => {
     const activeClients = document.getElementsByClassName("active-clients")[0];
     activeClients.appendChild(sessionClient);
     return sessionClient;
-  }
+  };
 
   useEffect(() => {
     const auth = getAuth();
@@ -101,7 +108,7 @@ const Renderer = ({ id }) => {
 
   useEffect(() => {
     console.log("Session Clients:", sessionClients);
-  },[sessionClients])
+  }, [sessionClients]);
 
   const navigate = useNavigate();
 
@@ -110,7 +117,6 @@ const Renderer = ({ id }) => {
   const sendWS = (message) => {
     try {
       if (ws === null) {
-        console.log('Cannot Send: WS is not connected');
         // console.log("Websocket is not connected");
         throw new Error("Websocket is not connected");
         return;
@@ -122,11 +128,11 @@ const Renderer = ({ id }) => {
   };
 
   const updateCursor = (cursor, id) => {
-    let cursorElement = document.getElementById(`${id}-cursor`);
+    let cursorElement = document.getElementById(id);
     if (cursorElement === null || cursorElement === undefined) {
       cursorElement = document.createElement("div");
       cursorElement.className = "client-cursor";
-      cursorElement.id = id + "-cursor";
+      cursorElement.id = id;
 
       const cursorImage = document.createElement("img");
       cursorImage.src = cursorAsset;
@@ -140,22 +146,6 @@ const Renderer = ({ id }) => {
     }
     cursorElement.style.left = cursor.x + "px";
     cursorElement.style.top = cursor.y + "px";
-  };
-
-  const updateBlinkingCursor = (position, id) => {
-    let cursorElement = document.getElementById(`${id}-blinking-cursor`);
-
-    if (cursorElement === null || cursorElement === undefined) {
-      // create a new cursor element
-      cursorElement = document.createElement("div");
-      cursorElement.className = "blinking-cursor";
-      cursorElement.id = id + "-blinking-cursor";
-
-      document.body.appendChild(cursorElement);
-    }
-
-    cursorElement.style.left = position.x + "px";
-    cursorElement.style.top = position.y + "px";
   };
 
   const handleMouseMove = (e) => {
@@ -197,29 +187,29 @@ const Renderer = ({ id }) => {
   //   }
   // }
 
-  useEffect(() => {
-    if(blinkingPosition === null) return;
-      try {
-        const position = blinkingPosition.getCursor();
-        const line = position.line;
-        const ch = position.ch;
+  //   useEffect(() => {
+  //     if (blinkingPosition === null) return;
+  //     try {
+  //       const position = blinkingPosition.getCursor();
+  //       const line = position.line;
+  //       const ch = position.ch;
 
-        console.log(line, ch)
-        // console.log(position)
-        // const { top, left } = getCaretCoordinates(textInput, position);
-        // console.log(top, left)
+  //       console.log(line, ch);
+  //       // console.log(position)
+  //       // const { top, left } = getCaretCoordinates(textInput, position);
+  //       // console.log(top, left)
 
-        sendWS({
-            action: "updateBlinkingCursor",
-            data: {
-                position: { x: ch, y: line },
-                // position: { x: left, y: top },
-            }
-        })
-      } catch (error) {
-        // console.error("Error updating cursor position:", error);
-      }
-  }, [blinkingPosition])
+  //       sendWS({
+  //         action: "updateBlinkingCursor",
+  //         data: {
+  //           position: { x: ch, y: line },
+  //           // position: { x: left, y: top },
+  //         },
+  //       });
+  //     } catch (error) {
+  //       // console.error("Error updating cursor position:", error);
+  //     }
+  //   }, [blinkingPosition]);
 
   const getCaretCoordinates = (element, position) => {
     const div = document.createElement("div");
@@ -265,7 +255,6 @@ const Renderer = ({ id }) => {
         return;
       }
 
-      console.log("Connecting to the server...");
       ws.onopen = () => {
         console.log("Connected to the server");
         const client_cursors = document.getElementsByClassName("client-cursor");
@@ -315,15 +304,15 @@ const Renderer = ({ id }) => {
               const clients = data.clients;
               clients.forEach((client) => {
                 const current_session_client = createSessionClient(client.id);
-              })
+              });
               console.log("Clients:", clients);
               break;
-            case "updateBlinkingCursor":
-              const position = data.position;
-              const blink_id = data.id;
-              console.log("Blinking Cursor: ", position);
-              updateBlinkingCursor(position, blink_id);
-              break;
+            // case "updateBlinkingCursor":
+            //   const position = data.position;
+            //   const blink_id = data.id;
+            //   console.log("Blinking Cursor: ", position);
+            //   updateBlinkingCursor(position, blink_id);
+            //   break;
             case "client_joined":
               console.log("Client Joined");
               const join_id = data.ws_id;
@@ -332,15 +321,26 @@ const Renderer = ({ id }) => {
               break;
             case "client_disconnected":
               const client_id = data.ws_id;
-              const client_cursor = document.getElementById(client_id + "-cursor")
+              const client_cursor = document.getElementById(
+                client_id + "-cursor"
+              );
               if (client_cursor !== null) {
                 client_cursor.remove();
               }
 
-              const session_client = document.getElementById(client_id + "-pfp");
+              const session_client = document.getElementById(
+                client_id + "-pfp"
+              );
               if (session_client !== null) {
                 session_client.remove();
               }
+              break;
+            case "newCode":
+              const newHTML = data.new_html;
+              const newCSS = data.new_css;
+              console.log("New code received:", newHTML, newCSS);
+              setHtmlInput(newHTML);
+              setCssInput(newCSS);
               break;
           }
         } catch (error) {
@@ -403,22 +403,52 @@ const Renderer = ({ id }) => {
       },
     });
   };
-
   const handleIframeMouseOver = (e) => {
     const element = e.target;
     const rect = element.getBoundingClientRect();
     element.style.outline = "2px dashed #7B70F5";
+    element.style.borderRadius = "4px";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
     const elementHtml = element.outerHTML;
+
+    // Create or update tooltip
+    let tooltip = document.getElementById("tooltip");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.id = "tooltip";
+      tooltip.style.position = "absolute";
+      tooltip.style.backgroundColor = "#fff";
+      tooltip.style.border = "1px solid #ccc";
+      tooltip.style.padding = "4px";
+      tooltip.style.zIndex = "1000";
+      tooltip.style.pointerEvents = "none";
+      document.body.appendChild(tooltip);
+    }
+
+    // Update tooltip content
+    tooltip.innerHTML = `
+        <p>${element.tagName.toLowerCase()}</p>
+        
+    `;
+
+    // Position tooltip
+    const iframeRect = iframeRef.current.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + iframeRect.left + window.scrollX}px`;
+    tooltip.style.top = `${
+      rect.top + iframeRect.top + window.scrollY - tooltip.offsetHeight
+    }px`;
+    tooltip.style.display = "block";
 
     // highlightCode(elementHtml);
   };
 
   const handleIframeMouseOut = (e) => {
     const tooltip = document.getElementById("tooltip");
-    tooltip.style.display = "none";
+    if (tooltip) {
+      tooltip.style.display = "none";
+    }
 
     const element = e.target;
     element.style.outline = "none";
@@ -442,31 +472,6 @@ const Renderer = ({ id }) => {
 
       iframeDocument.addEventListener("mouseover", handleIframeMouseOver);
       iframeDocument.addEventListener("mouseout", handleIframeMouseOut);
-
-      window.addEventListener("message", (event) => {
-        if (event.data.type === "hover") {
-          // Highlight code in CodeMirror
-          if (htmlEditorRef.current) {
-            console.log("Event Data:", event.data);
-            const editor = htmlEditorRef.current.getCodeMirror();
-            editor.eachLine((line) => {
-              const text = editor.getLine(line.lineNo());
-              console.log("Text:", text);
-              if (text.includes(event.data.path)) {
-                editor.addLineClass(line.lineNo(), "background", "highlight");
-              } else {
-                editor.removeLineClass(
-                  line.lineNo(),
-                  "background",
-                  "highlight"
-                );
-              }
-            });
-          }
-        } else if (event.data.type === "click") {
-          setSelectedElement(event.data.path);
-        }
-      });
     }
 
     return () => {
@@ -475,6 +480,27 @@ const Renderer = ({ id }) => {
         iframeDocument.removeEventListener("mouseout", handleIframeMouseOut);
       }
     };
+  }, [htmlInput, cssInput]);
+
+  const updateIframeContent = (iframeId, html, css) => {
+    const iframe = document.getElementById(iframeId);
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <style>${css}</style>
+      ${html}
+    `);
+    doc.close();
+  };
+
+  const debouncedUpdate = debounce((html, css) => {
+    const nextIframe = activeIframe === "iframe1" ? "iframe2" : "iframe1";
+    updateIframeContent(nextIframe, html, css);
+    setActiveIframe(nextIframe);
+  }, 300);
+
+  useEffect(() => {
+    debouncedUpdate(htmlInput, cssInput);
   }, [htmlInput, cssInput]);
 
   useEffect(() => {
@@ -554,6 +580,18 @@ const Renderer = ({ id }) => {
     }
   };
 
+  const handleSubmit = () => {
+    console.log(input, htmlInput, cssInput);
+    sendWS({
+      action: "generateNew",
+      data: {
+        prompt: input,
+        html: htmlInput,
+        css: cssInput,
+      },
+    });
+  };
+
   return (
     <main onMouseMove={handleMouseMove}>
       <div
@@ -561,9 +599,11 @@ const Renderer = ({ id }) => {
         style={{
           position: "absolute",
           display: "none",
-          backgroundColor: "yellow",
-          padding: "5px",
-          borderRadius: "5px",
+          backgroundColor: "#ffffff90",
+          fontSize: "12px",
+          border: "1px solid #ccc",
+          padding: "2px 4px",
+          borderRadius: "4px",
         }}
       ></div>
       <div className="top-bar">
@@ -587,7 +627,6 @@ const Renderer = ({ id }) => {
           )}
         </div>
         <div className="button-container">
-
           <div className="active-clients">
             {/* {(sessionClients.length > 0) && sessionClients.map((client) => {
               return <SessionClient imgSrc={client.imgSrc} />
@@ -597,20 +636,23 @@ const Renderer = ({ id }) => {
           <button onClick={handleSave} className="save-button">
             <SaveIcon size={16} />
           </button>
-          <button
+          {/* <button
             onClick={() => navigate(`/live/${id}`)}
             className="save-button"
           >
             <EyeIcon size={16} />
-          </button>
-          <button
-            type="submit"
-            onClick={handleDeploy}
-            className="render-button"
-          >
-            <RocketIcon size={16} style={{ marginRight: "8px" }} />
-            Deploy
-          </button>
+          </button> */}
+          <Link to={`/live/${id}`} target="_blank" className="deply-button">
+            <button
+              target="_blank"
+              type="submit"
+              onClick={handleDeploy}
+              className="deploy-button"
+            >
+              <RocketIcon size={16} style={{ marginRight: "8px" }} />
+              Deploy
+            </button>
+          </Link>
         </div>
       </div>
       <div className="interface">
@@ -647,7 +689,6 @@ const Renderer = ({ id }) => {
                   }}
                   editorDidMount={(editor) => {
                     editor.setValue(htmlInput);
-                    htmlEditorRef.current = editor;
                   }}
                 />
               ) : (
@@ -670,24 +711,52 @@ const Renderer = ({ id }) => {
             </form>
           </div>
           <div className="prompt-container">
-            <input
-              value={input}
-              className="input"
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="ex. Make a website for a flower shop"
-            />
-            <button type="button" onClick={toggleRecording}>
-              {isRecording ? "Stop Talking" : "Start Talking"}
-            </button>
+            <div style={{ position: "relative", width: "100%" }}>
+              <input
+                value={input}
+                className="input"
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="ex. Make a website for a flower shop"
+              />
+              <button
+                style={{
+                  position: "absolute",
+                  right: "0rem",
+                  top: "0.5rem",
+                  borderRadius: "50%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "2.25rem",
+                  width: "2.25rem",
+                  padding: "0",
+
+                  outline: isRecording ? "4px solid #7B70F5" : "none",
+                }}
+                type="button"
+                onClick={toggleRecording}
+              >
+                {isRecording ? <MicOffIcon size={16} /> : <MicIcon size={16} />}
+              </button>
+            </div>
+            <button onClick={handleSubmit}>Submit</button>
           </div>
         </div>
-        <iframe
-          ref={iframeRef}
-          style={{ width: "100%", height: "100%", border: "none" }}
-        />
+        <div id="iframe-container">
+          <iframe
+            id="iframe1"
+            className={`iframe ${
+              activeIframe === "iframe1" ? "visible" : "hidden"
+            }`}
+          ></iframe>
+          <iframe
+            id="iframe2"
+            className={`iframe ${
+              activeIframe === "iframe2" ? "visible" : "hidden"
+            }`}
+          ></iframe>
+        </div>
       </div>
     </main>
   );
-};
-
-export default Renderer;
+}
