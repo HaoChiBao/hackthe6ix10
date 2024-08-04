@@ -1,6 +1,7 @@
 // websocket express server
 const express = require("express");
 const http = require("http");
+const { send } = require("process");
 const WebSocket = require("ws");
 
 const app = express();
@@ -68,6 +69,8 @@ const joinProject = (id, ws) => {
   }
 };
 
+let chat_ws = null;
+
 // WebSocket connection handling
 wss.on("connection", (ws) => {
   // generate unique id for each client
@@ -87,23 +90,76 @@ wss.on("connection", (ws) => {
     })
   );
 
-  /* 
-    
-    {
-        action: 'join_project',
-        data: {
-            TEST: TEST_ID
-        }
-    }
+  try {
+    // ChatGPT
+    chat_ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
-    */
+    // Open WebSocket connection
+    chat_ws.on("open", function open() {
+      console.log("ChatGPT WebSocket connection opened");
+      //   console.log(chat_ws);
+    });
+
+    // Listen for messages from the server
+    chat_ws.on("message", function incoming(message) {
+      // console.log("ChatGPT WebSocket message:", data);
+
+      try {
+        const messageObj = JSON.parse(message);
+        const action = messageObj.action;
+        const data = messageObj.data;
+        console.log("New data is: ", data);
+        switch (action) {
+          case "generateNew":
+            // const html = data.html;
+            // const css = data.css;
+            const prompt = data.prompt;
+            ws.send(
+              JSON.stringify({
+                action: "generateNew",
+                data: {
+                  prompt: prompt,
+                  // html: html,
+                  // css: css,
+                },
+              })
+            );
+            // broadcast(
+            //   ws,
+            //   JSON.stringify({
+            //     action: "generateNew",
+            //     data: {
+            //       //   html: html,
+            //       //   css: css,
+            //       prompt: prompt,
+            //     },
+            //   })
+            // );
+            break;
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    });
+
+    // Handle WebSocket errors
+    chat_ws.on("error", function error(err) {
+      console.log("WebSocket error:", err);
+    });
+
+    // Handle WebSocket close event
+    chat_ws.on("close", function close() {
+      console.log("WebSocket connection closed");
+    });
+  } catch (error) {
+    console.log("CHAT_WS Error:", error);
+  }
 
   ws.on("message", (message) => {
     try {
       const messageObj = JSON.parse(message);
       const action = messageObj.action;
       const data = messageObj.data;
-      // console.log(messageObj)
       switch (action) {
         case "TEST":
           // console.log(messageObj)
@@ -123,12 +179,43 @@ wss.on("connection", (ws) => {
           broadcast(
             ws,
             JSON.stringify({
-              action,
+              action: "updateHTML",
               data: {
-                html,
+                html: html,
               },
             })
           );
+          break;
+        case "generateNew":
+          // get the data from the client side
+          const prompt = data.prompt;
+          const HTML = data.html;
+          const cssText = data.css;
+          console.log("Prompt:", prompt);
+          //   console.log("chatws is: ", chat_ws);
+          if (chat_ws) {
+            chat_ws.send(
+              JSON.stringify({
+                action: "generateNew",
+                data: {
+                  prompt: prompt,
+                  HTML: HTML,
+                  css: cssText,
+                },
+              })
+            );
+          } else {
+            console.log("ChatGPT WebSocket is not connected");
+          }
+          //   broadcast(
+          //     ws,
+          //     JSON.stringify({
+          //       action: "generateNew",
+          //       data: {
+          //         prompt: html,
+          //       },
+          //     })
+          //   );
           break;
         case "updateCSS":
           const css = data.css;
@@ -189,41 +276,6 @@ wss.on("connection", (ws) => {
     );
     leaveProject(ws.roomID, ws);
   });
-
-  return;
-  try {
-    // ChatGPT
-    let chat_ws = new WebSocket("ws://127.0.0.1:8000/ws/generateHTML");
-
-    // Open WebSocket connection
-    chat_ws.on("open", function open() {
-      console.log("WebSocket connection opened");
-      console.log(chat_ws);
-      // Send a prompt to the server
-      const prompt = {
-        prompt:
-          "Generate HTML for a simple webpage with a header, footer, and a main section.",
-      };
-      chat_ws.send(JSON.stringify(prompt));
-    });
-
-    // Listen for messages from the server
-    chat_ws.on("message", function incoming(data) {
-      console.log("Received:", data);
-    });
-
-    // Handle WebSocket errors
-    chat_ws.on("error", function error(err) {
-      console.log("WebSocket error:", err);
-    });
-
-    // Handle WebSocket close event
-    chat_ws.on("close", function close() {
-      console.log("WebSocket connection closed");
-    });
-  } catch (error) {
-    console.log("CHAT_WS Error:", error);
-  }
 });
 
 // Start the server

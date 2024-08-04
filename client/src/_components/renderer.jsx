@@ -23,7 +23,7 @@ export default function Renderer({ id }) {
   );
 
   const [innerText, setInnerText] = useState("...");
-  // const serverAddress = "ws://localhost:8080";
+  // let serverAddress = "ws://localhost:8080";
   const serverAddress = "ws://hack-the-6ix10.glitch.me/";
   const [ws, setWS] = useState(null);
 
@@ -429,6 +429,7 @@ export default function Renderer({ id }) {
                     id="html"
                     value={htmlInput}
                     onChange={changeInnerHTML}
+                    onMouseDown={handleHTMLDown}
                     rows="20"
                     cols="50"
                   />
@@ -440,6 +441,7 @@ export default function Renderer({ id }) {
                     id="css"
                     value={cssInput}
                     onChange={changeInnerCSS}
+                    onMouseDown={handleCSSDown}
                     rows="20"
                     cols="50"
                   />
