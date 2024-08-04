@@ -1,6 +1,14 @@
 import DOMPurify from "dompurify";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { ArrowLeft, EyeIcon, RocketIcon, SaveIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  EyeIcon,
+  Mic,
+  MicIcon,
+  MicOffIcon,
+  RocketIcon,
+  SaveIcon,
+} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
@@ -23,6 +31,7 @@ export default function Renderer({ id }) {
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
+  const [activeIframe, setActiveIframe] = useState("iframe1");
 
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
@@ -283,6 +292,27 @@ export default function Renderer({ id }) {
     };
   }, [htmlInput, cssInput]);
 
+  const updateIframeContent = (iframeId, html, css) => {
+    const iframe = document.getElementById(iframeId);
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <style>${css}</style>
+      ${html}
+    `);
+    doc.close();
+  };
+
+  const debouncedUpdate = debounce((html, css) => {
+    const nextIframe = activeIframe === "iframe1" ? "iframe2" : "iframe1";
+    updateIframeContent(nextIframe, html, css);
+    setActiveIframe(nextIframe);
+  }, 300);
+
+  useEffect(() => {
+    debouncedUpdate(htmlInput, cssInput);
+  }, [htmlInput, cssInput]);
+
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -410,20 +440,23 @@ export default function Renderer({ id }) {
           <button onClick={handleSave} className="save-button">
             <SaveIcon size={16} />
           </button>
-          <button
+          {/* <button
             onClick={() => navigate(`/live/${id}`)}
             className="save-button"
           >
             <EyeIcon size={16} />
-          </button>
-          <button
-            type="submit"
-            onClick={handleDeploy}
-            className="render-button"
-          >
-            <RocketIcon size={16} style={{ marginRight: "8px" }} />
-            Deploy
-          </button>
+          </button> */}
+          <Link to={`/live/${id}`} target="_blank" className="deply-button">
+            <button
+              target="_blank"
+              type="submit"
+              onClick={handleDeploy}
+              className="deploy-button"
+            >
+              <RocketIcon size={16} style={{ marginRight: "8px" }} />
+              Deploy
+            </button>
+          </Link>
         </div>
       </div>
       <div className="interface">
@@ -482,22 +515,51 @@ export default function Renderer({ id }) {
             </form>
           </div>
           <div className="prompt-container">
-            <input
-              value={input}
-              className="input"
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="ex. Make a website for a flower shop"
-            />
+            <div style={{ position: "relative", width: "100%" }}>
+              <input
+                value={input}
+                className="input"
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="ex. Make a website for a flower shop"
+              />
+              <button
+                style={{
+                  position: "absolute",
+                  right: "0rem",
+                  top: "0.5rem",
+                  borderRadius: "50%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "2.25rem",
+                  width: "2.25rem",
+                  padding: "0",
+
+                  outline: isRecording ? "4px solid #7B70F5" : "none",
+                }}
+                type="button"
+                onClick={toggleRecording}
+              >
+                {isRecording ? <MicOffIcon size={16} /> : <MicIcon size={16} />}
+              </button>
+            </div>
             <button onClick={handleSubmit}>Submit</button>
-            <button type="button" onClick={toggleRecording}>
-              {isRecording ? "Stop Talking" : "Start Talking"}
-            </button>
           </div>
         </div>
-        <iframe
-          ref={iframeRef}
-          style={{ width: "100%", height: "100%", border: "none" }}
-        />
+        <div id="iframe-container">
+          <iframe
+            id="iframe1"
+            className={`iframe ${
+              activeIframe === "iframe1" ? "visible" : "hidden"
+            }`}
+          ></iframe>
+          <iframe
+            id="iframe2"
+            className={`iframe ${
+              activeIframe === "iframe2" ? "visible" : "hidden"
+            }`}
+          ></iframe>
+        </div>
       </div>
     </main>
   );
