@@ -56,6 +56,16 @@ const deleteProject = (id) => {
 
 const leaveProject = (id, ws) => {
   try {
+    broadcast(
+      ws,
+      JSON.stringify({
+        action: "client_left",
+        data: {
+          ws_id: ws.id,
+        },
+      })
+    );
+
     if (projects_ids[id] === undefined || projects_ids[id] === null) return;
     projects_ids[id].clients = projects_ids[id].clients.filter(
       (client) => client !== ws
@@ -71,8 +81,34 @@ const joinProject = (id, ws) => {
   try {
     if (projects_ids[id] === undefined || projects_ids[id] === null)
       createProject(id);
+
     projects_ids[id].clients.push(ws);
     ws.roomID = id;
+
+    broadcast(
+      ws,
+      JSON.stringify({
+        action: "client_joined",
+        data: {
+          ws_id: ws.id,
+          ws_roomID: ws.roomID,
+        },
+      })
+    );
+
+    const clients = projects_ids[id].clients.map((client) => {
+      return {
+        ws_id: client.id,
+      };
+    });
+    ws.send(JSON.stringify({
+      action: "project_joined",
+      data: {
+        // filter ws_id from clients
+        clients: clients.filter((client) => client.ws_id !== ws.id),
+      }
+    }))
+
   } catch (error) {
     console.error("Error:", error);
   }
@@ -87,17 +123,12 @@ wss.on("connection", (ws) => {
   ws.roomID = null;
   console.log(`Client id: ${ws.id} connected`);
 
-  // Send a welcome message
-  ws.send(
-    // send as buffer
-    JSON.stringify({
-      action: "Welcome",
-      data: {
-        ws_id: ws.id,
-        ws_roomID: ws.roomID,
-      },
-    })
-  );
+  ws.send(JSON.stringify({
+    action: 'Welcome',
+    data: {
+      ws_id: ws.id,
+    }
+  }))
 
   try {
     // ChatGPT
@@ -175,9 +206,16 @@ wss.on("connection", (ws) => {
           // ws.send(JSON.stringify(messageObj))
           console.log(projects_ids);
           break;
+        case "active_clients_imgs":
+          console.log("Active Clients: ", projects_ids[ws.roomID].clients);
+          const room_clients = projects_ids[ws.roomID].forEach((client) => {
+            return client.imgSrc;
+          })
+          console.log("Room Clients: ", room_clients);
+          break;
         case "join_project":
           const roomID = data.roomID;
-          joinProject(roomID, ws);
+          joinProject(roomID,ws);
           break;
         case "leave_project":
           leaveProject(ws.roomID, ws);

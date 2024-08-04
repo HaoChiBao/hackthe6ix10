@@ -11,7 +11,34 @@ import "codemirror/lib/codemirror.css";
 import "codemirror/mode/xml/xml";
 import "codemirror/mode/css/css";
 
+import {
+  getAuth,
+  GithubAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged,
+} from "firebase/auth";
+
+import defaultPfp0 from "../assets/cat.png"
+import defaultPfp1 from "../assets/panda.png"
+import defaultPfp2 from "../assets/rabbit.png"
+
 import debounce from "lodash.debounce";
+
+const pfpList = [defaultPfp0, defaultPfp1, defaultPfp2]
+
+const SessionClient = ({ imgSrc , id}) => {
+  useEffect(() => {
+    if(imgSrc === null) {
+      // imgSrc = "https://www.gravatar.com/avatar/
+      console.log(0)
+    }
+  },[])
+  return (
+    <div className="session-client" id = {`${id}-pfp`}>
+      <img src={imgSrc} alt="Client" />
+    </div>
+  )
+}
 
 const Renderer = ({ id }) => {
   const [htmlInput, setHtmlInput] = useState(``);
@@ -24,11 +51,34 @@ const Renderer = ({ id }) => {
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
 
+  const [sessionClients, setSessionClients] = useState([
+    // {imgSrc: defaultPfp0},
+    // {imgSrc: defaultPfp1, id : "1"},
+    // {imgSrc: defaultPfp2, id : "2"},
+  ]);
+
+  const [blinkingPosition, setBlinkingPosition] = useState({x:0,y:0});
+
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
   );
 
   const [innerText, setInnerText] = useState("...");
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("User:", user);
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsubscribe;
+  }, []);
 
   let serverAddress = "ws://localhost:8080";
   // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
@@ -41,6 +91,7 @@ const Renderer = ({ id }) => {
   const sendWS = (message) => {
     try {
       if (ws === null) {
+        console.log('Cannot Send: WS is not connected');
         // console.log("Websocket is not connected");
         throw new Error("Websocket is not connected");
         return;
@@ -102,32 +153,54 @@ const Renderer = ({ id }) => {
     });
   };
 
-  const handleClientBlinkingCursor = (e) => {
-    // console.log(e.getCursor())
-    // console.log(e.listSelections())
-    try {
-      const position = e.getCursor();
-      const line = position.line;
-      const ch = position.ch;
+  // const handleClientBlinkingCursor = (e) => {
+  //   // console.log(e.getCursor())
+  //   // console.log(e.listSelections())
+  //   try {
+  //     const position = e.getCursor();
+  //     const line = position.line;
+  //     const ch = position.ch;
 
-      console.log(line, ch)
-      // console.log(position)
-      const { top, left } = getCaretCoordinates(textInput, position);
-      // console.log(top, left)
-      // blinkingCursor.style.top = `${top}px`;
-      // blinkingCursor.style.left = `${left}px`;
-      if(position === 0) return
-      sendWS({
-          action: "updateBlinkingCursor",
-          data: {
-              position: { x: ch, y: line },
-              // position: { x: left, y: top },
-          }
-      })
-    } catch (error) {
-      console.error("Error updating cursor position:", error);
-    }
-  }
+  //     console.log(line, ch)
+  //     // console.log(position)
+  //     // const { top, left } = getCaretCoordinates(textInput, position);
+  //     // console.log(top, left)
+
+  //     sendWS({
+  //         action: "updateBlinkingCursor",
+  //         data: {
+  //             position: { x: ch, y: line },
+  //             // position: { x: left, y: top },
+  //         }
+  //     })
+  //   } catch (error) {
+  //     console.error("Error updating cursor position:", error);
+  //   }
+  // }
+
+  useEffect(() => {
+    if(blinkingPosition === null) return;
+      try {
+        const position = blinkingPosition.getCursor();
+        const line = position.line;
+        const ch = position.ch;
+
+        console.log(line, ch)
+        // console.log(position)
+        // const { top, left } = getCaretCoordinates(textInput, position);
+        // console.log(top, left)
+
+        sendWS({
+            action: "updateBlinkingCursor",
+            data: {
+                position: { x: ch, y: line },
+                // position: { x: left, y: top },
+            }
+        })
+      } catch (error) {
+        // console.error("Error updating cursor position:", error);
+      }
+  }, [blinkingPosition])
 
   const getCaretCoordinates = (element, position) => {
       const div = document.createElement('div');
@@ -176,6 +249,11 @@ const Renderer = ({ id }) => {
       console.log("Connecting to the server...");
       ws.onopen = () => {
         console.log("Connected to the server");
+        const client_cursors = document.getElementsByClassName("client-cursor");
+        while (client_cursors.length > 0) {
+          client_cursors[0].remove();
+        }
+
         ws.send(
           JSON.stringify({
             action: "join_project",
@@ -186,7 +264,12 @@ const Renderer = ({ id }) => {
         );
       };
 
-      ws.onclose = (e) => {};
+      ws.onclose = (e) => {
+        const client_cursors = document.getElementsByClassName("client-cursor");
+        while (client_cursors.length > 0) {
+          client_cursors[0].remove();
+        }
+      };
 
       ws.onmessage = async (e) => {
         try {
@@ -195,6 +278,8 @@ const Renderer = ({ id }) => {
           const data = message.data;
           switch (action) {
             case "Welcome":
+              console.log("Welcome to the server", data.ws_id);
+              ws.id = data.ws_id;
               break;
             case "updateHTML":
               debouncedUpdateHTML(data.html);
@@ -207,17 +292,37 @@ const Renderer = ({ id }) => {
               const id = data.id;
               updateCursor(cursor, id);
               break;
+            case "project_joined":
+              const clients = data.clients;
+              clients.forEach((client) => {
+                const randomPfp = pfpList[Math.floor(Math.random() * pfpList.length)];
+                setSessionClients([...sessionClients, {imgSrc: randomPfp, id: client.ws_id}]);
+              })
+              console.log("Clients:", clients);
+              break;
             case "updateBlinkingCursor":
               const position = data.position;
               const blink_id = data.id;
+              console.log("Blinking Cursor: ", position);
               updateBlinkingCursor(position, blink_id);
+              break;
+            case "client_joined":
+              console.log("Client Joined");
+              const join_id = data.ws_id;
+              // const client_imgSrc = data.imgSrc;
+              const client_pfp = document.getElementById(`${join_id}-pfp`);
+              if (client_pfp === null) {
+                setSessionClients([...sessionClients, {imgSrc: defaultPfp0 , id: join_id}]);
+              }
               break;
             case "client_disconnected":
               const client_id = data.ws_id;
-              const client_cursor = document.getElementById(client_id);
+              setSessionClients([...sessionClients.filter((client) => client.id !== client_id)]);
+              const client_cursor = document.getElementById(client_id + "-cursor")
               if (client_cursor !== null) {
                 client_cursor.remove();
               }
+
               break;
           }
         } catch (error) {
@@ -227,6 +332,10 @@ const Renderer = ({ id }) => {
 
       ws.onerror = (e) => {
         console.error("Error:", e);
+        const client_cursors = document.getElementsByClassName("client-cursor");
+        while (client_cursors.length > 0) {
+          client_cursors[0].remove();
+        }
       };
     };
     initiate_WS();
@@ -436,6 +545,13 @@ const Renderer = ({ id }) => {
           )}
         </div>
         <div className="button-container">
+
+          <div className="active-clients">
+            {(sessionClients.length > 0) && sessionClients.map((client) => {
+              return <SessionClient imgSrc={client.imgSrc} />
+            })}
+          </div>
+
           <button onClick={handleSave} className="save-button">
             <SaveIcon size={16} />
           </button>
@@ -490,9 +606,9 @@ const Renderer = ({ id }) => {
                   editorDidMount={(editor) => {
                     editor.setValue(htmlInput);
                   }}
-                  onInputRead={handleClientBlinkingCursor}
-                  onKeyUp={handleClientBlinkingCursor}
-                  onClick={handleClientBlinkingCursor}
+                  onInputRead={(e) => { setBlinkingPosition(null); setBlinkingPosition(e)}}
+                  onKeyUp={(e) => { setBlinkingPosition(null); setBlinkingPosition(e)}}
+                  onClick={(e) => { setBlinkingPosition(null); setBlinkingPosition(e)}}
                     // onInput={handleClientBlinkingCursor}
                     // onClick={handleClientBlinkingCursor}
                     // onKeyUp={handleClientBlinkingCursor}
