@@ -50,33 +50,11 @@ async def code_generation(
         messages=[
             {
                 "role": "user",
-                "content": f"You are a professional web developer who makes beautiful, modern websites. Given the user prompt, return vanilla HTML and CSS code that fulfills the user's request. If the following HTML Context and CSS Context is empty, then I am create a new website. If there is HTML Context and CSS Context, please take that into account\n\nWhen returning the code, please include Google Font Imports and use modern styling to make the websites prettier.\n\n Prompt: {input} \n\nHTML Code:\n{html_code}\n\nCSS Context:\n{css_context}.",
+                "content": f"Prompt: {input} If the following HTML Code and CSS Context is nothing then I am asking you to create an entirely new website so please generate both HTML and CSS code\n\nHTML Code:\n{html_code}\n\nCSS Context:\n{css_context}. When returning the code, please include Google Font Imports to make the websites prettier.",
             }
-            
         ],
         response_model=ResponseModel,
         stream=True,
-    )
-
-async def code_classifier(
-    input: str,
-    html_code: str,
-    css_context: str,
-):
-    print("Prompt: ", input)
-    print("HTML Code: ", html_code)
-    print("CSS Context: ", css_context)
-    return client.chat.completions.create(
-        model="gpt-4o",
-        temperature=0.1,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Prompt: {input} I am asking you to classify the following HTML Code and CSS Context\n\nHTML Code:\n{html_code}\n\nCSS Context:\n{css_context}.",
-            }
-        ],
-        response_model=instructor.Partial[ReturnData],
-        stream=False,
     )
 
 
@@ -100,7 +78,6 @@ async def websocket_generate_html(websocket: WebSocket):
                 print("CSS received:", css)
 
                 response_model = instructor.Partial[ReturnData]
-                # classification = await code_classifier(prompt, html, css)
                 stream = await code_generation(prompt, html, css, response_model)
 
                 for response in stream:
@@ -108,8 +85,8 @@ async def websocket_generate_html(websocket: WebSocket):
                     html_string_code = obj.get("html")
                     css_string_code = obj.get("css")
 
-                    # print("HTML code:", html_string_code)
-                    # print("CSS code:", css_string_code)
+                    print("HTML code:", html_string_code)
+                    print("CSS code:", css_string_code)
                     await websocket.send_text(
                         json.dumps(
                             {
