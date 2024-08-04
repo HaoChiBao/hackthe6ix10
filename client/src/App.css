@@ -216,3 +216,7 @@ textarea {
 .code-mirror {
   height: 100%;
 }
+
+.CodeMirror-line.highlight {
+  background-color: rgb(162, 71, 200) !important;
+}
