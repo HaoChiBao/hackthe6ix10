@@ -66,8 +66,8 @@ const Renderer = ({ id }) => {
   );
 
   const [innerText, setInnerText] = useState("...");
-    // let serverAddress = "ws://localhost:8080";
-  const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
+    let serverAddress = "ws://localhost:8080";
+  // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
 
   const [user, setUser] = useState(null);
   const [ws, setWS] = useState(null);

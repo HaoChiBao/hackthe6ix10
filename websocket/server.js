@@ -132,7 +132,9 @@ wss.on("connection", (ws) => {
 
   try {
     // ChatGPT
-    chat_ws = new WebSocket("ws://127.0.0.1:8000/ws");
+    // const chat_ws_address = "ws://127.0.0.1:8000/ws";
+    const chat_ws_address = "wss://c9bf-138-51-82-224.ngrok-free.app/ws";
+    chat_ws = new WebSocket(chat_ws_address);
 
     // Open WebSocket connection
     chat_ws.on("open", function open() {
