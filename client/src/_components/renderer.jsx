@@ -23,15 +23,17 @@ const Renderer = ({ id }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
+  const [selectedElement, setSelectedElement] = useState(null);
+  const htmlEditorRef = useRef(null);
 
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
   );
 
   const [innerText, setInnerText] = useState("...");
-
-  let serverAddress = "ws://localhost:8080";
+  //   let serverAddress = "ws://localhost:8080";
   // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
+
   const [ws, setWS] = useState(null);
 
   const navigate = useNavigate();
@@ -79,14 +81,14 @@ const Renderer = ({ id }) => {
       // create a new cursor element
       cursorElement = document.createElement("div");
       cursorElement.className = "blinking-cursor";
-      cursorElement.id = id + '-blinking-cursor';
+      cursorElement.id = id + "-blinking-cursor";
 
       document.body.appendChild(cursorElement);
     }
 
     cursorElement.style.left = position.x + "px";
     cursorElement.style.top = position.y + "px";
-  }
+  };
 
   const handleMouseMove = (e) => {
     const cursor = {
@@ -110,53 +112,53 @@ const Renderer = ({ id }) => {
       const line = position.line;
       const ch = position.ch;
 
-      console.log(line, ch)
+      console.log(line, ch);
       // console.log(position)
       const { top, left } = getCaretCoordinates(textInput, position);
       // console.log(top, left)
       // blinkingCursor.style.top = `${top}px`;
       // blinkingCursor.style.left = `${left}px`;
-      if(position === 0) return
+      if (position === 0) return;
       sendWS({
-          action: "updateBlinkingCursor",
-          data: {
-              position: { x: ch, y: line },
-              // position: { x: left, y: top },
-          }
-      })
+        action: "updateBlinkingCursor",
+        data: {
+          position: { x: ch, y: line },
+          // position: { x: left, y: top },
+        },
+      });
     } catch (error) {
       console.error("Error updating cursor position:", error);
     }
-  }
+  };
 
   const getCaretCoordinates = (element, position) => {
-      const div = document.createElement('div');
-      const text = element.value.substring(0, position);
-      const styles = getComputedStyle(element);
-      const bounding = element.getBoundingClientRect();
+    const div = document.createElement("div");
+    const text = element.value.substring(0, position);
+    const styles = getComputedStyle(element);
+    const bounding = element.getBoundingClientRect();
 
-      for (const prop of styles) {
-          div.style[prop] = styles[prop];
-      }
+    for (const prop of styles) {
+      div.style[prop] = styles[prop];
+    }
 
-      div.style.position = 'absolute';
-      div.style.whiteSpace = 'pre-wrap';
-      div.style.visibility = 'hidden';
-      div.textContent = text;
-      document.body.appendChild(div);
+    div.style.position = "absolute";
+    div.style.whiteSpace = "pre-wrap";
+    div.style.visibility = "hidden";
+    div.textContent = text;
+    document.body.appendChild(div);
 
-      const span = document.createElement('span');
-      span.textContent = element.value[position] || '.';
-      div.appendChild(span);
+    const span = document.createElement("span");
+    span.textContent = element.value[position] || ".";
+    div.appendChild(span);
 
-      const { offsetTop: top, offsetLeft: left } = span;
-      document.body.removeChild(div);
+    const { offsetTop: top, offsetLeft: left } = span;
+    document.body.removeChild(div);
 
-      return { top: top + bounding.top, left };
-  }
+    return { top: top + bounding.top, left };
+  };
 
   // Update the innerHTML of the div
-  const updateHTML = (html) => {}
+  const updateHTML = (html) => {};
   // Debounced functions
   const debouncedUpdateHTML = debounce((html) => {
     setHtmlInput(html);
@@ -280,8 +282,7 @@ const Renderer = ({ id }) => {
   const handleIframeMouseOver = (e) => {
     const element = e.target;
     const rect = element.getBoundingClientRect();
-    element.style.outline = "1px solid #888";
-    element.style.borderRadius = "4px";
+    element.style.outline = "2px dashed #7B70F5";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
@@ -316,6 +317,31 @@ const Renderer = ({ id }) => {
 
       iframeDocument.addEventListener("mouseover", handleIframeMouseOver);
       iframeDocument.addEventListener("mouseout", handleIframeMouseOut);
+
+      window.addEventListener("message", (event) => {
+        if (event.data.type === "hover") {
+          // Highlight code in CodeMirror
+          if (htmlEditorRef.current) {
+            console.log("Event Data:", event.data);
+            const editor = htmlEditorRef.current.getCodeMirror();
+            editor.eachLine((line) => {
+              const text = editor.getLine(line.lineNo());
+              console.log("Text:", text);
+              if (text.includes(event.data.path)) {
+                editor.addLineClass(line.lineNo(), "background", "highlight");
+              } else {
+                editor.removeLineClass(
+                  line.lineNo(),
+                  "background",
+                  "highlight"
+                );
+              }
+            });
+          }
+        } else if (event.data.type === "click") {
+          setSelectedElement(event.data.path);
+        }
+      });
     }
 
     return () => {
@@ -489,13 +515,14 @@ const Renderer = ({ id }) => {
                   }}
                   editorDidMount={(editor) => {
                     editor.setValue(htmlInput);
+                    htmlEditorRef.current = editor;
                   }}
                   onInputRead={handleClientBlinkingCursor}
                   onKeyUp={handleClientBlinkingCursor}
                   onClick={handleClientBlinkingCursor}
-                    // onInput={handleClientBlinkingCursor}
-                    // onClick={handleClientBlinkingCursor}
-                    // onKeyUp={handleClientBlinkingCursor}
+                  // onInput={handleClientBlinkingCursor}
+                  // onClick={handleClientBlinkingCursor}
+                  // onKeyUp={handleClientBlinkingCursor}
                 />
               ) : (
                 <CodeMirror
@@ -535,6 +562,6 @@ const Renderer = ({ id }) => {
       </div>
     </main>
   );
-}
+};
 
 export default Renderer;
