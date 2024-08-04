@@ -4,9 +4,11 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from models import *
 import instructor
+from itertools import chain
 import json
 import os
 import time
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv()
@@ -32,30 +34,28 @@ def read_root():
     return {"Hello": "World"}
 
 
-# Asynchronous generator for streaming responses
-async def create_partial_instance(
-    input: str, ResponseModel: instructor.Partial[ReturnData]
+# Asynchronous generator for streaming responses for HTML generation
+async def code_generation(
+    input: str,
+    html_code: str,
+    css_context: str,
+    ResponseModel: instructor.Partial[ReturnData],
 ):
+    print("Prompt: ", input)
+    print("HTML Code: ", html_code)
+    print("CSS Context: ", css_context)
     return client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-4o",
         temperature=0.1,
-        messages=[{"role": "user", "content": input}],
+        messages=[
+            {
+                "role": "user",
+                "content": f"Prompt: {input} If the following HTML Code and CSS Context is nothing then I am asking you to create an entirely new website so please generate both HTML and CSS code\n\nHTML Code:\n{html_code}\n\nCSS Context:\n{css_context}. When returning the code, please include Google Font Imports to make the websites prettier.",
+            }
+        ],
         response_model=ResponseModel,
         stream=True,
     )
-
-
-# Function to get new content
-async def get_new(previous: str, response: str) -> str:
-    # time.sleep(1)
-    if not response:
-        return ""
-
-    for i in range(min(len(previous), len(response))):
-        if response[i] != previous[i]:
-            return response[i:]
-
-    return ""
 
 
 @app.websocket("/ws")
@@ -64,32 +64,42 @@ async def websocket_generate_html(websocket: WebSocket):
     print("Client connected")
 
     try:
-        message = await websocket.receive_json()
-        data = message.get("data")
-        print("Received data:", data)
+        while True:  # Continuously listen for new messages
+            message = await websocket.receive_json()
+            data = message.get("data")
+            print("Received data:", data)
 
-        if data and data.get("prompt"):
-            prompt = data.get("prompt")
-            print("Prompt received: ", prompt)
+            if data and data.get("prompt"):
+                prompt = data.get("prompt")
+                html = data.get("html")
+                css = data.get("css")
+                print("Prompt received:", prompt)
+                print("HTML received:", html)
+                print("CSS received:", css)
 
-            Response = instructor.Partial[ReturnData]
-            stream = await create_partial_instance(prompt, Response)
-            current_output = ""
+                response_model = instructor.Partial[ReturnData]
+                stream = await code_generation(prompt, html, css, response_model)
 
-            for response in stream:
-                obj = response.model_dump()
-                string_code = obj.get("code")
-                print("String code: ", string_code)
-                # new_string = await get_new(current_output, string_code)
-                # current_output += new_string
-                # print("Current Output: ", current_output)
-                await websocket.send_text(
-                    json.dumps(
-                        {"action": "generateNew", "data": {"prompt": string_code}}
+                for response in stream:
+                    obj = response.model_dump()
+                    html_string_code = obj.get("html")
+                    css_string_code = obj.get("css")
+
+                    print("HTML code:", html_string_code)
+                    print("CSS code:", css_string_code)
+                    await websocket.send_text(
+                        json.dumps(
+                            {
+                                "action": "newCode",
+                                "data": {
+                                    "html": html_string_code,
+                                    "css": css_string_code,
+                                },
+                            }
+                        )
                     )
-                )
-        else:
-            await websocket.send_text("No prompt provided, just waiting")
+            else:
+                await websocket.send_text("No prompt provided, just waiting")
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:

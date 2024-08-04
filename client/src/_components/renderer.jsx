@@ -23,17 +23,15 @@ const Renderer = ({ id }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
-  const [selectedElement, setSelectedElement] = useState(null);
-  const htmlEditorRef = useRef(null);
 
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
   );
 
   const [innerText, setInnerText] = useState("...");
-  //   let serverAddress = "ws://localhost:8080";
-  const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
 
+  let serverAddress = "ws://localhost:8080";
+  // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
   const [ws, setWS] = useState(null);
 
   const navigate = useNavigate();
@@ -282,7 +280,8 @@ const Renderer = ({ id }) => {
   const handleIframeMouseOver = (e) => {
     const element = e.target;
     const rect = element.getBoundingClientRect();
-    element.style.outline = "2px dashed #7B70F5";
+    element.style.outline = "1px solid #888";
+    element.style.borderRadius = "4px";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
@@ -317,31 +316,6 @@ const Renderer = ({ id }) => {
 
       iframeDocument.addEventListener("mouseover", handleIframeMouseOver);
       iframeDocument.addEventListener("mouseout", handleIframeMouseOut);
-
-      window.addEventListener("message", (event) => {
-        if (event.data.type === "hover") {
-          // Highlight code in CodeMirror
-          if (htmlEditorRef.current) {
-            console.log("Event Data:", event.data);
-            const editor = htmlEditorRef.current.getCodeMirror();
-            editor.eachLine((line) => {
-              const text = editor.getLine(line.lineNo());
-              console.log("Text:", text);
-              if (text.includes(event.data.path)) {
-                editor.addLineClass(line.lineNo(), "background", "highlight");
-              } else {
-                editor.removeLineClass(
-                  line.lineNo(),
-                  "background",
-                  "highlight"
-                );
-              }
-            });
-          }
-        } else if (event.data.type === "click") {
-          setSelectedElement(event.data.path);
-        }
-      });
     }
 
     return () => {
@@ -515,7 +489,6 @@ const Renderer = ({ id }) => {
                   }}
                   editorDidMount={(editor) => {
                     editor.setValue(htmlInput);
-                    htmlEditorRef.current = editor;
                   }}
                   onInputRead={handleClientBlinkingCursor}
                   onKeyUp={handleClientBlinkingCursor}
