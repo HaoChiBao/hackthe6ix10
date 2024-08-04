@@ -1,8 +1,8 @@
 import DOMPurify from "dompurify";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, EyeIcon, RocketIcon, SaveIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import cursorAsset from "../assets/cursor.png";
 import "./renderer.css";
@@ -29,9 +29,11 @@ export default function Renderer({ id }) {
   );
 
   const [innerText, setInnerText] = useState("...");
-  // let serverAddress = "ws://localhost:8080";
-  const serverAddress = "ws://hack-the-6ix10.glitch.me/";
+  let serverAddress = "ws://localhost:8080";
+  //   const serverAddress = "ws://hack-the-6ix10.glitch.me/";
   const [ws, setWS] = useState(null);
+
+  const navigate = useNavigate();
 
   const TEST_ROOM = "TEST_ROOM";
 
@@ -175,13 +177,12 @@ export default function Renderer({ id }) {
     fetchData();
   }, [id]);
 
-  const changeInnerCSS = (e) => {
-    const css = e;
-    setCssInput(css);
+  const changeInnerCSS = (value) => {
+    setCssInput(value);
     sendWS({
       action: "updateCSS",
       data: {
-        css,
+        css: value,
       },
     });
   };
@@ -356,13 +357,20 @@ export default function Renderer({ id }) {
         </div>
         <div className="button-container">
           <button onClick={handleSave} className="save-button">
-            Save
+            <SaveIcon size={16} />
+          </button>
+          <button
+            onClick={() => navigate(`/live/${id}`)}
+            className="save-button"
+          >
+            <EyeIcon size={16} />
           </button>
           <button
             type="submit"
             onClick={handleDeploy}
             className="render-button"
           >
+            <RocketIcon size={16} style={{ marginRight: "8px" }} />
             Deploy
           </button>
         </div>
@@ -392,7 +400,7 @@ export default function Renderer({ id }) {
                   className="code-mirror"
                   value={htmlInput}
                   options={{
-                    mode: "htmlmixed",
+                    mode: "xml",
                     theme: "default",
                     lineNumbers: true,
                   }}
