@@ -215,9 +215,10 @@ export default function Renderer({ id }) {
   };
   const handleIframeMouseOver = (e) => {
     const element = e.target;
+    console.log("Mouse over element:", element);
     const rect = element.getBoundingClientRect();
-    element.style.outline = "2px dashed #7B70F5";
-    element.style.borderRadius = "4px";
+    element.style.outline = "2px dashed #7B70F5 !important";
+    element.style.borderRadius = "4px !important";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
@@ -250,8 +251,6 @@ export default function Renderer({ id }) {
       rect.top + iframeRect.top + window.scrollY - tooltip.offsetHeight
     }px`;
     tooltip.style.display = "block";
-
-    // highlightCode(elementHtml);
   };
 
   const handleIframeMouseOut = (e) => {
@@ -547,11 +546,13 @@ export default function Renderer({ id }) {
         <div id="iframe-container">
           <iframe
             id="iframe1"
+            ref={iframeRef}
             className={`iframe ${
               activeIframe === "iframe1" ? "visible" : "hidden"
             }`}
           ></iframe>
           <iframe
+            ref={iframeRef}
             id="iframe2"
             className={`iframe ${
               activeIframe === "iframe2" ? "visible" : "hidden"
