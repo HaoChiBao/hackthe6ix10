@@ -6,6 +6,12 @@ import { Link } from "react-router-dom";
 import { db } from "../firebase";
 import cursorAsset from "../assets/cursor.png";
 import "./renderer.css";
+import { Controlled as CodeMirror } from "react-codemirror2";
+import "codemirror/lib/codemirror.css";
+import "codemirror/mode/xml/xml";
+import "codemirror/mode/css/css";
+
+import debounce from "lodash.debounce";
 
 export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
@@ -28,15 +34,6 @@ export default function Renderer({ id }) {
   const [ws, setWS] = useState(null);
 
   const TEST_ROOM = "TEST_ROOM";
-
-  const testFunc = () => {
-    ws.send(
-      JSON.stringify({
-        action: "TEST",
-        data: [{ test: "test" }, { test: "test" }, { test: "test" }],
-      })
-    );
-  };
 
   const updateCursor = (cursor, id) => {
     let cursorElement = document.getElementById(id);
@@ -73,13 +70,14 @@ export default function Renderer({ id }) {
     });
   };
 
-  const updateHTML = (html) => {
+  // Debounced functions
+  const debouncedUpdateHTML = debounce((html) => {
     setHtmlInput(html);
-  };
+  }, 10);
 
-  const updateCSS = (css) => {
+  const debouncedUpdateCSS = debounce((css) => {
     setCssInput(css);
-  };
+  }, 10);
 
   const sendWS = (message) => {
     try {
@@ -122,12 +120,10 @@ export default function Renderer({ id }) {
             case "Welcome":
               break;
             case "updateHTML":
-              const html = data.html;
-              updateHTML(html);
+              debouncedUpdateHTML(data.html);
               break;
             case "updateCSS":
-              const css = data.css;
-              updateCSS(css);
+              debouncedUpdateCSS(data.css);
               break;
             case "updateCursor":
               const cursor = data.cursor;
@@ -180,8 +176,8 @@ export default function Renderer({ id }) {
   }, [id]);
 
   const changeInnerCSS = (e) => {
-    const css = e.target.value;
-    updateCSS(css);
+    const css = e;
+    setCssInput(css);
     sendWS({
       action: "updateCSS",
       data: {
@@ -190,17 +186,37 @@ export default function Renderer({ id }) {
     });
   };
 
-  const changeInnerHTML = (e) => {
-    const selectionStart = e.target.selectionStart;
-    const selectionEnd = e.target.selectionEnd;
-    const html = e.target.value;
-    updateHTML(html);
+  const changeInnerHTML = (value) => {
+    setHtmlInput(value);
     sendWS({
       action: "updateHTML",
       data: {
-        html,
+        html: value,
       },
     });
+  };
+
+  const handleIframeMouseOver = (e) => {
+    const element = e.target;
+    const rect = element.getBoundingClientRect();
+    element.style.outline = "1px solid #888";
+    element.style.borderRadius = "4px";
+    element.style.cursor = "default";
+
+    const html = iframeRef.current.contentDocument.documentElement.outerHTML;
+    const elementHtml = element.outerHTML;
+
+    // highlightCode(elementHtml);
+  };
+
+  const handleIframeMouseOut = (e) => {
+    const tooltip = document.getElementById("tooltip");
+    tooltip.style.display = "none";
+
+    const element = e.target;
+    element.style.outline = "none";
+
+    // clearHighlight();
   };
 
   useEffect(() => {
@@ -306,58 +322,6 @@ export default function Renderer({ id }) {
     }
   };
 
-  const handleIframeMouseOver = (e) => {
-    const element = e.target;
-    const rect = element.getBoundingClientRect();
-    element.style.outline = "1px solid #3b32a0";
-    element.style.borderRadius = "4px";
-    element.style.cursor = "default";
-
-    const html = iframeRef.current.contentDocument.documentElement.outerHTML;
-    const elementHtml = element.outerHTML;
-
-    highlightCode(elementHtml);
-  };
-
-  const handleIframeMouseOut = (e) => {
-    const tooltip = document.getElementById("tooltip");
-    tooltip.style.display = "none";
-
-    const element = e.target;
-    element.style.outline = "none";
-
-    clearHighlight();
-  };
-
-  const highlightCode = (elementHtml) => {
-    // Remove the style attribute from the elementHtml
-    const elementHtmlWithoutStyle = elementHtml.replace(/ style="[^"]*"/g, "");
-
-    const textarea = document.getElementById(
-      activeTab === "html" ? "html" : "css"
-    );
-
-    const code = htmlInput;
-    const startIndex = code.indexOf(elementHtmlWithoutStyle);
-    console.log(code, startIndex, elementHtmlWithoutStyle);
-
-    if (startIndex !== -1) {
-      textarea.setSelectionRange(
-        startIndex,
-        startIndex + elementHtmlWithoutStyle.length
-      );
-      textarea.focus();
-    }
-  };
-
-  const clearHighlight = () => {
-    const textarea = document.getElementById(
-      activeTab === "html" ? "html" : "css"
-    );
-    textarea.setSelectionRange(0, 0);
-    textarea.blur();
-  };
-
   return (
     <main onMouseMove={handleMouseMove}>
       <div
@@ -423,29 +387,38 @@ export default function Renderer({ id }) {
               </div>
             </div>
             <form className="form">
-              {activeTab === "html" && (
-                <div className="field">
-                  <textarea
-                    id="html"
-                    value={htmlInput}
-                    onChange={changeInnerHTML}
-                    onMouseDown={handleHTMLDown}
-                    rows="20"
-                    cols="50"
-                  />
-                </div>
-              )}
-              {activeTab === "css" && (
-                <div className="field">
-                  <textarea
-                    id="css"
-                    value={cssInput}
-                    onChange={changeInnerCSS}
-                    onMouseDown={handleCSSDown}
-                    rows="20"
-                    cols="50"
-                  />
-                </div>
+              {activeTab === "html" ? (
+                <CodeMirror
+                  className="code-mirror"
+                  value={htmlInput}
+                  options={{
+                    mode: "htmlmixed",
+                    theme: "default",
+                    lineNumbers: true,
+                  }}
+                  onBeforeChange={(editor, data, value) => {
+                    changeInnerHTML(value);
+                  }}
+                  editorDidMount={(editor) => {
+                    editor.setValue(htmlInput);
+                  }}
+                />
+              ) : (
+                <CodeMirror
+                  className="code-mirror"
+                  value={cssInput}
+                  options={{
+                    mode: "css",
+                    theme: "default",
+                    lineNumbers: true,
+                  }}
+                  onBeforeChange={(editor, data, value) => {
+                    changeInnerCSS(value);
+                  }}
+                  editorDidMount={(editor) => {
+                    editor.setValue(cssInput);
+                  }}
+                />
               )}
             </form>
           </div>

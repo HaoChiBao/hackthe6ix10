@@ -211,3 +211,7 @@ textarea {
 .project-name {
   padding: 1rem;
 }
+
+.code-mirror {
+  height: 100%;
+}
