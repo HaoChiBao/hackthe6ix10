@@ -13,7 +13,7 @@ import "codemirror/mode/css/css";
 
 import debounce from "lodash.debounce";
 
-const Renderer = ({ id }) => {
+export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
   const [projectName, setProjectName] = useState("");
@@ -38,25 +38,12 @@ const Renderer = ({ id }) => {
 
   const TEST_ROOM = "TEST_ROOM";
 
-  const sendWS = (message) => {
-    try {
-      if (ws === null) {
-        // console.log("Websocket is not connected");
-        throw new Error("Websocket is not connected");
-        return;
-      }
-      ws.send(JSON.stringify(message));
-    } catch (error) {
-      console.error("Send WS Error");
-    }
-  };
-
   const updateCursor = (cursor, id) => {
-    let cursorElement = document.getElementById(`${id}-cursor`);
+    let cursorElement = document.getElementById(id);
     if (cursorElement === null || cursorElement === undefined) {
       cursorElement = document.createElement("div");
       cursorElement.className = "client-cursor";
-      cursorElement.id = id + "-cursor";
+      cursorElement.id = id;
 
       const cursorImage = document.createElement("img");
       cursorImage.src = cursorAsset;
@@ -70,22 +57,6 @@ const Renderer = ({ id }) => {
     }
     cursorElement.style.left = cursor.x + "px";
     cursorElement.style.top = cursor.y + "px";
-  };
-
-  const updateBlinkingCursor = (position, id) => {
-    let cursorElement = document.getElementById(`${id}-blinking-cursor`);
-
-    if (cursorElement === null || cursorElement === undefined) {
-      // create a new cursor element
-      cursorElement = document.createElement("div");
-      cursorElement.className = "blinking-cursor";
-      cursorElement.id = id + "-blinking-cursor";
-
-      document.body.appendChild(cursorElement);
-    }
-
-    cursorElement.style.left = position.x + "px";
-    cursorElement.style.top = position.y + "px";
   };
 
   const handleMouseMove = (e) => {
@@ -102,61 +73,6 @@ const Renderer = ({ id }) => {
     });
   };
 
-  const handleClientBlinkingCursor = (e) => {
-    // console.log(e.getCursor())
-    // console.log(e.listSelections())
-    try {
-      const position = e.getCursor();
-      const line = position.line;
-      const ch = position.ch;
-
-      console.log(line, ch);
-      // console.log(position)
-      //   const { top, left } = getCaretCoordinates(textInput, position);
-      // console.log(top, left)
-      // blinkingCursor.style.top = `${top}px`;
-      // blinkingCursor.style.left = `${left}px`;
-      if (position === 0) return;
-      sendWS({
-        action: "updateBlinkingCursor",
-        data: {
-          position: { x: ch, y: line },
-          // position: { x: left, y: top },
-        },
-      });
-    } catch (error) {
-      console.error("Error updating cursor position:", error);
-    }
-  };
-
-  const getCaretCoordinates = (element, position) => {
-    const div = document.createElement("div");
-    const text = element.value.substring(0, position);
-    const styles = getComputedStyle(element);
-    const bounding = element.getBoundingClientRect();
-
-    for (const prop of styles) {
-      div.style[prop] = styles[prop];
-    }
-
-    div.style.position = "absolute";
-    div.style.whiteSpace = "pre-wrap";
-    div.style.visibility = "hidden";
-    div.textContent = text;
-    document.body.appendChild(div);
-
-    const span = document.createElement("span");
-    span.textContent = element.value[position] || ".";
-    div.appendChild(span);
-
-    const { offsetTop: top, offsetLeft: left } = span;
-    document.body.removeChild(div);
-
-    return { top: top + bounding.top, left };
-  };
-
-  // Update the innerHTML of the div
-  const updateHTML = (html) => {};
   // Debounced functions
   const debouncedUpdateHTML = debounce((html) => {
     setHtmlInput(html);
@@ -166,6 +82,18 @@ const Renderer = ({ id }) => {
     setCssInput(css);
   }, 10);
 
+  const sendWS = (message) => {
+    try {
+      if (ws === null) {
+        console.log("Websocket is not connected");
+        return;
+      }
+      ws.send(JSON.stringify(message));
+    } catch (error) {
+      console.error("Send WS Error");
+    }
+  };
+
   useEffect(() => {
     const initiate_WS = async () => {
       if (ws === null) {
@@ -173,9 +101,7 @@ const Renderer = ({ id }) => {
         return;
       }
 
-      console.log("Connecting to the server...");
       ws.onopen = () => {
-        console.log("Connected to the server");
         ws.send(
           JSON.stringify({
             action: "join_project",
@@ -207,17 +133,19 @@ const Renderer = ({ id }) => {
               const id = data.id;
               updateCursor(cursor, id);
               break;
-            case "updateBlinkingCursor":
-              const position = data.position;
-              const blink_id = data.id;
-              updateBlinkingCursor(position, blink_id);
-              break;
             case "client_disconnected":
               const client_id = data.ws_id;
               const client_cursor = document.getElementById(client_id);
               if (client_cursor !== null) {
                 client_cursor.remove();
               }
+              break;
+            case "newCode":
+              const newHTML = data.new_html;
+              const newCSS = data.new_css;
+              console.log("New code received:", newHTML, newCSS);
+              setHtmlInput(newHTML);
+              setCssInput(newCSS);
               break;
           }
         } catch (error) {
@@ -403,6 +331,18 @@ const Renderer = ({ id }) => {
     }
   };
 
+  const handleSubmit = () => {
+    console.log(input, htmlInput, cssInput);
+    sendWS({
+      action: "generateNew",
+      data: {
+        prompt: input,
+        html: htmlInput,
+        css: cssInput,
+      },
+    });
+  };
+
   return (
     <main onMouseMove={handleMouseMove}>
       <div
@@ -490,12 +430,6 @@ const Renderer = ({ id }) => {
                   editorDidMount={(editor) => {
                     editor.setValue(htmlInput);
                   }}
-                  onInputRead={handleClientBlinkingCursor}
-                  onKeyUp={handleClientBlinkingCursor}
-                  onClick={handleClientBlinkingCursor}
-                  // onInput={handleClientBlinkingCursor}
-                  // onClick={handleClientBlinkingCursor}
-                  // onKeyUp={handleClientBlinkingCursor}
                 />
               ) : (
                 <CodeMirror
@@ -523,6 +457,7 @@ const Renderer = ({ id }) => {
               onChange={(e) => setInput(e.target.value)}
               placeholder="ex. Make a website for a flower shop"
             />
+            <button onClick={handleSubmit}>Submit</button>
             <button type="button" onClick={toggleRecording}>
               {isRecording ? "Stop Talking" : "Start Talking"}
             </button>
@@ -535,6 +470,4 @@ const Renderer = ({ id }) => {
       </div>
     </main>
   );
-};
-
-export default Renderer;
+}
