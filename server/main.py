@@ -4,7 +4,6 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from models import *
 import instructor
-from itertools import chain
 import json
 import os
 import time
@@ -28,44 +27,71 @@ app.add_middleware(
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = instructor.from_openai(OpenAI(api_key=openai_api_key))
 
+# Example knowledge base
+examples = {
+    "landing page": {
+        "html": "<html>...</html>",
+        "css": "body { ... }"
+    },
+    "contact form": {
+        "html": "<form>...</form>",
+        "css": "form { ... }"
+    },
+    # Add more examples as needed
+}
+
+def retrieve_examples(prompt):
+    keywords = prompt.lower().split()
+    relevant_examples = {key: val for key, val in examples.items() if any(keyword in key for keyword in keywords)}
+    return relevant_examples
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
-
 # Asynchronous generator for streaming responses for HTML generation
-async def code_generation(
-    input: str,
-    html_code: str,
-    css_context: str,
-    ResponseModel: instructor.Partial[ReturnData],
-):
-    print("Prompt: ", input)
-    print("HTML Code: ", html_code)
-    print("CSS Context: ", css_context)
+async def code_generation(input, html_code, css_context, ResponseModel):
+    print("Prompt:", input)
+    print("HTML Code:", html_code)
+    print("CSS Context:", css_context)
+    
+    # Retrieve examples based on the prompt
+    examples = retrieve_examples(input)
+    example_html = "\n".join([example['html'] for example in examples.values()])
+    example_css = "\n".join([example['css'] for example in examples.values()])
+    
+    # Incorporate examples into the prompt
+    prompt_with_examples = (
+        f"You are a professional web developer who makes beautiful, modern websites. Given the user prompt, return vanilla HTML and CSS code that fulfills the user's request. If the following HTML Context and CSS Context is empty, then create a new website. "
+        f"If there is HTML Context and CSS Context, please take that into account.\n\n"
+        f"When returning the code, please include Google Font Imports and use modern styling to make the websites prettier. "
+        f"Include images through img tags with very descriptive keywords for alt text. DO NOT include background images of elements. "
+        f"DO NOT include position: absolute or position: fixed.\n\n"
+        f"Prompt: {input}\n\n"
+        f"HTML Code:\n{html_code}\n\n"
+        f"CSS Context:\n{css_context}\n\n"
+        f"Examples of good HTML and CSS:\n\n"
+        f"HTML Examples:\n{example_html}\n\n"
+        f"CSS Examples:\n{example_css}"
+    )
+
     return client.chat.completions.create(
         model="gpt-4o",
         temperature=0.1,
         messages=[
             {
                 "role": "user",
-                "content": f"You are a professional web developer who makes beautiful, modern websites. Given the user prompt, return vanilla HTML and CSS code that fulfills the user's request. If the following HTML Context and CSS Context is empty, then I am create a new website. If there is HTML Context and CSS Context, please take that into account\n\nWhen returning the code, please include Google Font Imports and use modern styling to make the websites prettier.\n\n Prompt: {input} \n\nHTML Code:\n{html_code}\n\nCSS Context:\n{css_context}.",
+                "content": prompt_with_examples,
             }
-            
         ],
         response_model=ResponseModel,
         stream=True,
     )
 
-async def code_classifier(
-    input: str,
-    html_code: str,
-    css_context: str,
-):
-    print("Prompt: ", input)
-    print("HTML Code: ", html_code)
-    print("CSS Context: ", css_context)
+async def code_classifier(input, html_code, css_context):
+    print("Prompt:", input)
+    print("HTML Code:", html_code)
+    print("CSS Context:", css_context)
     return client.chat.completions.create(
         model="gpt-4o",
         temperature=0.1,
@@ -78,7 +104,6 @@ async def code_classifier(
         response_model=instructor.Partial[ReturnData],
         stream=False,
     )
-
 
 @app.websocket("/ws")
 async def websocket_generate_html(websocket: WebSocket):
@@ -108,8 +133,6 @@ async def websocket_generate_html(websocket: WebSocket):
                     html_string_code = obj.get("html")
                     css_string_code = obj.get("css")
 
-                    # print("HTML code:", html_string_code)
-                    # print("CSS code:", css_string_code)
                     await websocket.send_text(
                         json.dumps(
                             {

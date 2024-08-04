@@ -204,23 +204,52 @@ export default function Renderer({ id }) {
       },
     });
   };
-
   const handleIframeMouseOver = (e) => {
     const element = e.target;
     const rect = element.getBoundingClientRect();
-    element.style.outline = "1px solid #888";
+    element.style.outline = "2px dashed #7B70F5";
     element.style.borderRadius = "4px";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
     const elementHtml = element.outerHTML;
 
+    // Create or update tooltip
+    let tooltip = document.getElementById("tooltip");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.id = "tooltip";
+      tooltip.style.position = "absolute";
+      tooltip.style.backgroundColor = "#fff";
+      tooltip.style.border = "1px solid #ccc";
+      tooltip.style.padding = "4px";
+      tooltip.style.zIndex = "1000";
+      tooltip.style.pointerEvents = "none";
+      document.body.appendChild(tooltip);
+    }
+
+    // Update tooltip content
+    tooltip.innerHTML = `
+        <p>${element.tagName.toLowerCase()}</p>
+        
+    `;
+
+    // Position tooltip
+    const iframeRect = iframeRef.current.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + iframeRect.left + window.scrollX}px`;
+    tooltip.style.top = `${
+      rect.top + iframeRect.top + window.scrollY - tooltip.offsetHeight
+    }px`;
+    tooltip.style.display = "block";
+
     // highlightCode(elementHtml);
   };
 
   const handleIframeMouseOut = (e) => {
     const tooltip = document.getElementById("tooltip");
-    tooltip.style.display = "none";
+    if (tooltip) {
+      tooltip.style.display = "none";
+    }
 
     const element = e.target;
     element.style.outline = "none";
@@ -350,9 +379,11 @@ export default function Renderer({ id }) {
         style={{
           position: "absolute",
           display: "none",
-          backgroundColor: "yellow",
-          padding: "5px",
-          borderRadius: "5px",
+          backgroundColor: "#ffffff90",
+          fontSize: "12px",
+          border: "1px solid #ccc",
+          padding: "2px 4px",
+          borderRadius: "4px",
         }}
       ></div>
       <div className="top-bar">
