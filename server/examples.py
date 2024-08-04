@@ -869,5 +869,262 @@ gap:2rem;
 }
 
         """
+    },
+        "simple, clean , basic website": {
+            "html": """
+            <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fun Portfolio</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <div class="logo">MyFunPortfolio</div>
+    <nav>
+      <ul>
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#portfolio">Portfolio</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <section id="home" class="hero">
+      <h1>Welcome to My Fun Portfolio</h1>
+      <p>Discover my creative world</p>
+      <a href="#portfolio" class="cta-button">Explore My Work</a>
+    </section>
+    <section id="about" class="about">
+      <h2>About Me</h2>
+      <p>Hi, I'm [Your Name], a passionate designer and developer who loves to create fun and engaging experiences.</p>
+    </section>
+    <section id="portfolio" class="portfolio">
+      <h2>My Work</h2>
+      <div class="portfolio-items">
+        <div class="portfolio-item">
+          <img src="https://via.placeholder.com/300" alt="Screenshot of Project 1">
+          <h3>Project 1</h3>
+          <p>A fun and interactive web application.</p>
+        </div>
+        <div class="portfolio-item">
+          <img src="https://via.placeholder.com/300" alt="Screenshot of Project 2">
+          <h3>Project 2</h3>
+          <p>An engaging and colorful website design.</p>
+        </div>
+        <div class="portfolio-item">
+          <img src="https://via.placeholder.com/300" alt="Screenshot of Project 3">
+          <h3>Project 3</h3>
+          <p>A creative and dynamic mobile app.</p>
+        </div>
+      </div>
+    </section>
+    <section id="contact" class="contact">
+      <h2>Contact Me</h2>
+      <form>
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+        <label for="message">Message</label>
+        <textarea id="message" name="message" required></textarea>
+        <button type="submit">Send Message</button>
+      </form>
+    </section>
+  </main>
+  <footer>
+    <p>&copy; 2024 MyFunPortfolio. All rights reserved.</p>
+  </footer>
+</body>
+</html>""",
+            "css": """
+            body {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background-color: #f5f5f7;
+  color: #333;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #007aff;
+  color: #fff;
+}
+
+header .logo {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 400;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+nav ul li a:hover {
+  background-color: #005bb5;
+}
+
+.hero {
+  text-align: center;
+  padding: 25vh 2rem;
+  background-color: #007aff;
+  color: #fff;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin: 0 0 1rem;
+}
+
+.hero p {
+  font-size: 1.5rem;
+  margin: 0 0 2rem;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background-color: #005bb5;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.cta-button:hover {
+  background-color: #003f7f;
+}
+
+.about {
+  padding: 4rem 2rem;
+  text-align: center;
+  background-color: #f5f5f7;
+}
+
+.about h2 {
+  font-size: 2rem;
+  margin: 0 0 1rem;
+}
+
+.about p {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.portfolio {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.portfolio h2 {
+  font-size: 2rem;
+  margin: 0 0 2rem;
+}
+
+.portfolio-items {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.portfolio-item {
+  background-color: #fff;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.portfolio-item img {
+  width: 100%;
+  border-radius: 5px;
+}
+
+.portfolio-item h3 {
+  margin: 1rem 0 0.5rem;
+}
+
+.portfolio-item p {
+  margin: 0;
+}
+
+.contact {
+  padding: 4rem 2rem;
+  text-align: center;
+  background-color: #f5f5f7;
+}
+
+.contact form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.contact label {
+  display: block;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.contact input,
+.contact textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #333;
+}
+
+.contact button {
+  margin-top: 1rem;
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 5px;
+  background-color: #007aff;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.contact button:hover {
+  background-color: #005bb5;
+}
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  background-color: #007aff;
+  color: #fff;
+} """
+            
     }
 }

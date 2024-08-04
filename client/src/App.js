@@ -15,7 +15,7 @@ function App() {
       {location.pathname !== "/live" &&
         !location.pathname.startsWith("/live/") && (
           <nav>
-            <Link to="/">websitify</Link>
+            <Link to="/">__init__()</Link>
             <GitHubAuth />
           </nav>
         )}

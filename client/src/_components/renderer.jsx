@@ -19,38 +19,12 @@ import "codemirror/lib/codemirror.css";
 import "codemirror/mode/xml/xml";
 import "codemirror/mode/css/css";
 
-import {
-  getAuth,
-  GithubAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged,
-} from "firebase/auth";
-
-import defaultPfp0 from "../assets/cat.png";
-import defaultPfp1 from "../assets/panda.png";
-import defaultPfp2 from "../assets/rabbit.png";
-
 import debounce from "lodash.debounce";
-
-const pfpList = [defaultPfp0, defaultPfp1, defaultPfp2];
-
-const SessionClient = ({ imgSrc, id }) => {
-  useEffect(() => {
-    if (imgSrc === null) {
-      // imgSrc = "https://www.gravatar.com/avatar/
-      console.log(0);
-    }
-  }, []);
-  return (
-    <div className="session-client" id={`${id}-pfp`}>
-      <img src={imgSrc} alt="Client" />
-    </div>
-  );
-};
 
 export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
+  const htmlEditorRef = useRef();
   const [projectName, setProjectName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const iframeRef = useRef(null);
@@ -59,73 +33,21 @@ export default function Renderer({ id }) {
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
   const [activeIframe, setActiveIframe] = useState("iframe1");
-
-  const [sessionClients, setSessionClients] = useState([
-    // {imgSrc: defaultPfp0},
-    // {imgSrc: defaultPfp1, id : "1"},
-    // {imgSrc: defaultPfp2, id : "2"},
-  ]);
-
-  const [blinkingPosition, setBlinkingPosition] = useState({ x: 0, y: 0 });
+  const [selectedElement, setSelectedElement] = useState(null);
 
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
   );
 
   const [innerText, setInnerText] = useState("...");
-  // let serverAddress = "ws://localhost:8080";
-  const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
 
-  const [user, setUser] = useState(null);
+  let serverAddress = "ws://localhost:8080";
+  // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
   const [ws, setWS] = useState(null);
-
-  const createSessionClient = (id) => {
-    const sessionClient = document.createElement("div");
-    sessionClient.className = "session-client";
-    sessionClient.id = id + "-pfp";
-
-    const img = document.createElement("img");
-    img.src = pfpList[Math.floor(Math.random() * pfpList.length)];
-    sessionClient.appendChild(img);
-
-    const activeClients = document.getElementsByClassName("active-clients")[0];
-    activeClients.appendChild(sessionClient);
-    return sessionClient;
-  };
-
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("User:", user);
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
-    });
-    return () => unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    console.log("Session Clients:", sessionClients);
-  }, [sessionClients]);
 
   const navigate = useNavigate();
 
   const TEST_ROOM = "TEST_ROOM";
-
-  const sendWS = (message) => {
-    try {
-      if (ws === null) {
-        // console.log("Websocket is not connected");
-        throw new Error("Websocket is not connected");
-        return;
-      }
-      ws.send(JSON.stringify(message));
-    } catch (error) {
-      console.error("Send WS Error");
-    }
-  };
 
   const updateCursor = (cursor, id) => {
     let cursorElement = document.getElementById(id);
@@ -162,83 +84,6 @@ export default function Renderer({ id }) {
     });
   };
 
-  // const handleClientBlinkingCursor = (e) => {
-  //   // console.log(e.getCursor())
-  //   // console.log(e.listSelections())
-  //   try {
-  //     const position = e.getCursor();
-  //     const line = position.line;
-  //     const ch = position.ch;
-
-  //     console.log(line, ch)
-  //     // console.log(position)
-  //     // const { top, left } = getCaretCoordinates(textInput, position);
-  //     // console.log(top, left)
-
-  //     sendWS({
-  //         action: "updateBlinkingCursor",
-  //         data: {
-  //             position: { x: ch, y: line },
-  //             // position: { x: left, y: top },
-  //         }
-  //     })
-  //   } catch (error) {
-  //     console.error("Error updating cursor position:", error);
-  //   }
-  // }
-
-  //   useEffect(() => {
-  //     if (blinkingPosition === null) return;
-  //     try {
-  //       const position = blinkingPosition.getCursor();
-  //       const line = position.line;
-  //       const ch = position.ch;
-
-  //       console.log(line, ch);
-  //       // console.log(position)
-  //       // const { top, left } = getCaretCoordinates(textInput, position);
-  //       // console.log(top, left)
-
-  //       sendWS({
-  //         action: "updateBlinkingCursor",
-  //         data: {
-  //           position: { x: ch, y: line },
-  //           // position: { x: left, y: top },
-  //         },
-  //       });
-  //     } catch (error) {
-  //       // console.error("Error updating cursor position:", error);
-  //     }
-  //   }, [blinkingPosition]);
-
-  const getCaretCoordinates = (element, position) => {
-    const div = document.createElement("div");
-    const text = element.value.substring(0, position);
-    const styles = getComputedStyle(element);
-    const bounding = element.getBoundingClientRect();
-
-    for (const prop of styles) {
-      div.style[prop] = styles[prop];
-    }
-
-    div.style.position = "absolute";
-    div.style.whiteSpace = "pre-wrap";
-    div.style.visibility = "hidden";
-    div.textContent = text;
-    document.body.appendChild(div);
-
-    const span = document.createElement("span");
-    span.textContent = element.value[position] || ".";
-    div.appendChild(span);
-
-    const { offsetTop: top, offsetLeft: left } = span;
-    document.body.removeChild(div);
-
-    return { top: top + bounding.top, left };
-  };
-
-  // Update the innerHTML of the div
-  const updateHTML = (html) => {};
   // Debounced functions
   const debouncedUpdateHTML = debounce((html) => {
     setHtmlInput(html);
@@ -248,6 +93,18 @@ export default function Renderer({ id }) {
     setCssInput(css);
   }, 10);
 
+  const sendWS = (message) => {
+    try {
+      if (ws === null) {
+        console.log("Websocket is not connected");
+        return;
+      }
+      ws.send(JSON.stringify(message));
+    } catch (error) {
+      console.error("Send WS Error");
+    }
+  };
+
   useEffect(() => {
     const initiate_WS = async () => {
       if (ws === null) {
@@ -256,12 +113,6 @@ export default function Renderer({ id }) {
       }
 
       ws.onopen = () => {
-        console.log("Connected to the server");
-        const client_cursors = document.getElementsByClassName("client-cursor");
-        while (client_cursors.length > 0) {
-          client_cursors[0].remove();
-        }
-
         ws.send(
           JSON.stringify({
             action: "join_project",
@@ -272,12 +123,7 @@ export default function Renderer({ id }) {
         );
       };
 
-      ws.onclose = (e) => {
-        const client_cursors = document.getElementsByClassName("client-cursor");
-        while (client_cursors.length > 0) {
-          client_cursors[0].remove();
-        }
-      };
+      ws.onclose = (e) => {};
 
       ws.onmessage = async (e) => {
         try {
@@ -286,8 +132,6 @@ export default function Renderer({ id }) {
           const data = message.data;
           switch (action) {
             case "Welcome":
-              console.log("Welcome to the server", data.ws_id);
-              ws.id = data.ws_id;
               break;
             case "updateHTML":
               debouncedUpdateHTML(data.html);
@@ -300,39 +144,11 @@ export default function Renderer({ id }) {
               const id = data.id;
               updateCursor(cursor, id);
               break;
-            case "project_joined":
-              const clients = data.clients;
-              clients.forEach((client) => {
-                const current_session_client = createSessionClient(client.id);
-              });
-              console.log("Clients:", clients);
-              break;
-            // case "updateBlinkingCursor":
-            //   const position = data.position;
-            //   const blink_id = data.id;
-            //   console.log("Blinking Cursor: ", position);
-            //   updateBlinkingCursor(position, blink_id);
-            //   break;
-            case "client_joined":
-              console.log("Client Joined");
-              const join_id = data.ws_id;
-              // const client_imgSrc = data.imgSrc;
-              const new_session_client = createSessionClient(join_id);
-              break;
             case "client_disconnected":
               const client_id = data.ws_id;
-              const client_cursor = document.getElementById(
-                client_id + "-cursor"
-              );
+              const client_cursor = document.getElementById(client_id);
               if (client_cursor !== null) {
                 client_cursor.remove();
-              }
-
-              const session_client = document.getElementById(
-                client_id + "-pfp"
-              );
-              if (session_client !== null) {
-                session_client.remove();
               }
               break;
             case "newCode":
@@ -350,10 +166,6 @@ export default function Renderer({ id }) {
 
       ws.onerror = (e) => {
         console.error("Error:", e);
-        const client_cursors = document.getElementsByClassName("client-cursor");
-        while (client_cursors.length > 0) {
-          client_cursors[0].remove();
-        }
       };
     };
     initiate_WS();
@@ -405,9 +217,9 @@ export default function Renderer({ id }) {
   };
   const handleIframeMouseOver = (e) => {
     const element = e.target;
+    console.log("Mouse over element:", element);
     const rect = element.getBoundingClientRect();
     element.style.outline = "2px dashed #7B70F5";
-    element.style.borderRadius = "4px";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
@@ -440,8 +252,6 @@ export default function Renderer({ id }) {
       rect.top + iframeRect.top + window.scrollY - tooltip.offsetHeight
     }px`;
     tooltip.style.display = "block";
-
-    // highlightCode(elementHtml);
   };
 
   const handleIframeMouseOut = (e) => {
@@ -465,7 +275,9 @@ export default function Renderer({ id }) {
           <head>
             <style>${DOMPurify.sanitize(cssInput)}</style>
           </head>
-          <body>${DOMPurify.sanitize(htmlInput)}</body>
+          <body style="min-height: 1000px;">${DOMPurify.sanitize(
+            htmlInput
+          )}</body>
         </html>
       `);
       iframeDocument.close();
@@ -497,7 +309,7 @@ export default function Renderer({ id }) {
     const nextIframe = activeIframe === "iframe1" ? "iframe2" : "iframe1";
     updateIframeContent(nextIframe, html, css);
     setActiveIframe(nextIframe);
-  }, 300);
+  }, 500);
 
   useEffect(() => {
     debouncedUpdate(htmlInput, cssInput);
@@ -627,12 +439,6 @@ export default function Renderer({ id }) {
           )}
         </div>
         <div className="button-container">
-          <div className="active-clients">
-            {/* {(sessionClients.length > 0) && sessionClients.map((client) => {
-              return <SessionClient imgSrc={client.imgSrc} />
-            })} */}
-          </div>
-
           <button onClick={handleSave} className="save-button">
             <SaveIcon size={16} />
           </button>
@@ -657,7 +463,7 @@ export default function Renderer({ id }) {
       </div>
       <div className="interface">
         <div className="code-panel">
-          <div>
+          <div className="code-container">
             <div className="tab-container">
               <div className="tabs">
                 <div
@@ -674,41 +480,39 @@ export default function Renderer({ id }) {
                 </div>
               </div>
             </div>
-            <form className="form">
-              {activeTab === "html" ? (
-                <CodeMirror
-                  className="code-mirror"
-                  value={htmlInput}
-                  options={{
-                    mode: "xml",
-                    theme: "default",
-                    lineNumbers: true,
-                  }}
-                  onBeforeChange={(editor, data, value) => {
-                    changeInnerHTML(value);
-                  }}
-                  editorDidMount={(editor) => {
-                    editor.setValue(htmlInput);
-                  }}
-                />
-              ) : (
-                <CodeMirror
-                  className="code-mirror"
-                  value={cssInput}
-                  options={{
-                    mode: "css",
-                    theme: "default",
-                    lineNumbers: true,
-                  }}
-                  onBeforeChange={(editor, data, value) => {
-                    changeInnerCSS(value);
-                  }}
-                  editorDidMount={(editor) => {
-                    editor.setValue(cssInput);
-                  }}
-                />
-              )}
-            </form>
+            {activeTab === "html" ? (
+              <CodeMirror
+                className="code-mirror"
+                value={htmlInput}
+                options={{
+                  mode: "xml",
+                  theme: "default",
+                  lineNumbers: true,
+                }}
+                onBeforeChange={(editor, data, value) => {
+                  changeInnerHTML(value);
+                }}
+                editorDidMount={(editor) => {
+                  editor.setValue(htmlInput);
+                }}
+              />
+            ) : (
+              <CodeMirror
+                className="code-mirror"
+                value={cssInput}
+                options={{
+                  mode: "css",
+                  theme: "default",
+                  lineNumbers: true,
+                }}
+                onBeforeChange={(editor, data, value) => {
+                  changeInnerCSS(value);
+                }}
+                editorDidMount={(editor) => {
+                  editor.setValue(cssInput);
+                }}
+              />
+            )}
           </div>
           <div className="prompt-container">
             <div style={{ position: "relative", width: "100%" }}>
@@ -745,11 +549,13 @@ export default function Renderer({ id }) {
         <div id="iframe-container">
           <iframe
             id="iframe1"
+            ref={iframeRef}
             className={`iframe ${
               activeIframe === "iframe1" ? "visible" : "hidden"
             }`}
           ></iframe>
           <iframe
+            ref={iframeRef}
             id="iframe2"
             className={`iframe ${
               activeIframe === "iframe2" ? "visible" : "hidden"
