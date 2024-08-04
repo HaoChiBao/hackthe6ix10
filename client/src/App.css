@@ -115,6 +115,7 @@ form {
   flex-direction: column;
   border-right: 1px solid var(--border);
   justify-content: space-between;
+  max-width: 100%;
 }
 
 .tab-container {
