@@ -461,7 +461,7 @@ export default function Renderer({ id }) {
       </div>
       <div className="interface">
         <div className="code-panel">
-          <div>
+          <div className="code-container">
             <div className="tab-container">
               <div className="tabs">
                 <div
@@ -478,41 +478,39 @@ export default function Renderer({ id }) {
                 </div>
               </div>
             </div>
-            <form className="form">
-              {activeTab === "html" ? (
-                <CodeMirror
-                  className="code-mirror"
-                  value={htmlInput}
-                  options={{
-                    mode: "xml",
-                    theme: "default",
-                    lineNumbers: true,
-                  }}
-                  onBeforeChange={(editor, data, value) => {
-                    changeInnerHTML(value);
-                  }}
-                  editorDidMount={(editor) => {
-                    editor.setValue(htmlInput);
-                  }}
-                />
-              ) : (
-                <CodeMirror
-                  className="code-mirror"
-                  value={cssInput}
-                  options={{
-                    mode: "css",
-                    theme: "default",
-                    lineNumbers: true,
-                  }}
-                  onBeforeChange={(editor, data, value) => {
-                    changeInnerCSS(value);
-                  }}
-                  editorDidMount={(editor) => {
-                    editor.setValue(cssInput);
-                  }}
-                />
-              )}
-            </form>
+            {activeTab === "html" ? (
+              <CodeMirror
+                className="code-mirror"
+                value={htmlInput}
+                options={{
+                  mode: "xml",
+                  theme: "default",
+                  lineNumbers: true,
+                }}
+                onBeforeChange={(editor, data, value) => {
+                  changeInnerHTML(value);
+                }}
+                editorDidMount={(editor) => {
+                  editor.setValue(htmlInput);
+                }}
+              />
+            ) : (
+              <CodeMirror
+                className="code-mirror"
+                value={cssInput}
+                options={{
+                  mode: "css",
+                  theme: "default",
+                  lineNumbers: true,
+                }}
+                onBeforeChange={(editor, data, value) => {
+                  changeInnerCSS(value);
+                }}
+                editorDidMount={(editor) => {
+                  editor.setValue(cssInput);
+                }}
+              />
+            )}
           </div>
           <div className="prompt-container">
             <div style={{ position: "relative", width: "100%" }}>
