@@ -22,41 +22,10 @@
             drop-shadow(0 -1.3px 0 red); */
 }
 
-.button-container{
-    display: flex;
-    align-items: center;
-}
-
 .blinking-cursor{
     width: 2px;
     height: 1rem;
     background-color: rgb(41, 134, 255);
     border-radius: 5px;
     position: absolute;
-}
-
-.active-clients{
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    height: 35px;
-}
-
-.session-client{
-    height: 100%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.session-client img{
-    height: 100%;
-    width: 100%;
-    object-fit: cover;
-    
-    border-radius: 50%;
-    border: 2px solid rgb(255, 80, 80);
 }

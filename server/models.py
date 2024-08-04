@@ -18,5 +18,5 @@ class CSSGenerationPrompt(BaseModel):
 
 # RETURN MODEL
 class ReturnData(BaseModel):
-    code: str
-    # message: str
+    html: str
+    css: str

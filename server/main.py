@@ -7,6 +7,9 @@ import instructor
 import json
 import os
 import time
+import asyncio
+from examples import examples
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,36 +30,74 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 client = instructor.from_openai(OpenAI(api_key=openai_api_key))
 
 
+def retrieve_examples(prompt):
+    keywords = prompt.lower().split()
+    print("EXAMPLES: ",examples)
+
+    print("KEYWORDS: ",keywords)
+    relevant_examples = {key: val for key, val in examples.items() if any(keyword in key for keyword in keywords)}
+    return relevant_examples
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
+# Asynchronous generator for streaming responses for HTML generation
+async def code_generation(input, html_code, css_context, ResponseModel):
+    print("Prompt:", input)
+    print("HTML Code:", html_code)
+    print("CSS Context:", css_context)
+    
+    # Retrieve examples based on the prompt
+    examples = retrieve_examples(input)
+    print("Examples:", examples)
+    example_html = "\n".join([example['html'] for example in examples.values()])
+    example_css = "\n".join([example['css'] for example in examples.values()])
+    
+    # Incorporate examples into the prompt
+    prompt_with_examples = (
+        f"You are a professional web designer and developer who makes beautiful, modern websites. Given the user prompt, return vanilla HTML and CSS code that fulfills the user's request. If the following HTML Context and CSS Context is empty, then create a new website. "
+        f"If there is HTML Context and CSS Context, please take that into account, if not, generate a new website\n\n"
+        f"Please include Google Font Imports and use modern branding and styling that is beautiful and relevant to the user's prompt."
+        f"Include images through img tags with very descriptive keywords for alt text. DO NOT include background images of elements. "
+        f"Make sure the website is responsive and mobile-friendly. "
+        f"Prompt: {input}\n\n"
+        f"HTML Code:\n{html_code}\n\n"
+        f"CSS Context:\n{css_context}\n\n"
+        f"Examples of good HTML and CSS to use as reference for layout and design:\n\n"
+        f"HTML Examples:\n{example_html}\n\n"
+        f"CSS Examples:\n{example_css}"
+    )
 
-# Asynchronous generator for streaming responses
-async def create_partial_instance(
-    input: str, ResponseModel: instructor.Partial[ReturnData]
-):
     return client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-4o",
         temperature=0.1,
-        messages=[{"role": "user", "content": input}],
+        messages=[
+            {
+                "role": "user",
+                "content": prompt_with_examples,
+            }
+        ],
         response_model=ResponseModel,
         stream=True,
     )
 
-
-# Function to get new content
-async def get_new(previous: str, response: str) -> str:
-    # time.sleep(1)
-    if not response:
-        return ""
-
-    for i in range(min(len(previous), len(response))):
-        if response[i] != previous[i]:
-            return response[i:]
-
-    return ""
-
+async def code_classifier(input, html_code, css_context):
+    print("Prompt:", input)
+    print("HTML Code:", html_code)
+    print("CSS Context:", css_context)
+    return client.chat.completions.create(
+        model="gpt-4o",
+        temperature=0.1,
+        messages=[
+            {
+                "role": "user",
+                "content": f"Prompt: {input} I am asking you to classify the following HTML Code and CSS Context\n\nHTML Code:\n{html_code}\n\nCSS Context:\n{css_context}.",
+            }
+        ],
+        response_model=instructor.Partial[ReturnData],
+        stream=False,
+    )
 
 @app.websocket("/ws")
 async def websocket_generate_html(websocket: WebSocket):
@@ -64,32 +105,40 @@ async def websocket_generate_html(websocket: WebSocket):
     print("Client connected")
 
     try:
-        message = await websocket.receive_json()
-        data = message.get("data")
-        print("Received data:", data)
+        while True:  # Continuously listen for new messages
+            message = await websocket.receive_json()
+            data = message.get("data")
+            # print("Received data:", data)
 
-        if data and data.get("prompt"):
-            prompt = data.get("prompt")
-            print("Prompt received: ", prompt)
+            if data and data.get("prompt"):
+                prompt = data.get("prompt")
+                html = data.get("html")
+                css = data.get("css")
+                print("Prompt received:", prompt)
+                print("HTML received:", html)
+                print("CSS received:", css)
 
-            Response = instructor.Partial[ReturnData]
-            stream = await create_partial_instance(prompt, Response)
-            current_output = ""
+                response_model = instructor.Partial[ReturnData]
+                stream = await code_generation(prompt, html, css, response_model)
 
-            for response in stream:
-                obj = response.model_dump()
-                string_code = obj.get("code")
-                print("String code: ", string_code)
-                # new_string = await get_new(current_output, string_code)
-                # current_output += new_string
-                # print("Current Output: ", current_output)
-                await websocket.send_text(
-                    json.dumps(
-                        {"action": "generateNew", "data": {"prompt": string_code}}
+                for response in stream:
+                    obj = response.model_dump()
+                    html_string_code = obj.get("html")
+                    css_string_code = obj.get("css")
+
+                    await websocket.send_text(
+                        json.dumps(
+                            {
+                                "action": "newCode",
+                                "data": {
+                                    "html": html_string_code,
+                                    "css": css_string_code,
+                                },
+                            }
+                        )
                     )
-                )
-        else:
-            await websocket.send_text("No prompt provided, just waiting")
+            else:
+                await websocket.send_text("No prompt provided, just waiting")
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:

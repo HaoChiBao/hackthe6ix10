@@ -17,17 +17,17 @@ app.use(cors());
 
 // Broadcast to all connected clients, except the sender
 function broadcast(ws, message) {
-    try {
-        if(ws.roomID === null) return;
-        projects_ids[ws.roomID].clients.forEach((client) => {
-            // wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(message);
-            }
-        });
-    } catch (error) {
-        console.error("Error:", error);
-    }
+  try {
+    if (ws.roomID === null) return;
+    projects_ids[ws.roomID].clients.forEach((client) => {
+      // wss.clients.forEach((client) => {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  } catch (error) {
+    console.error("Error:", error);
+  }
 }
 
 const projects_ids = {
@@ -56,16 +56,6 @@ const deleteProject = (id) => {
 
 const leaveProject = (id, ws) => {
   try {
-    broadcast(
-      ws,
-      JSON.stringify({
-        action: "client_left",
-        data: {
-          ws_id: ws.id,
-        },
-      })
-    );
-
     if (projects_ids[id] === undefined || projects_ids[id] === null) return;
     projects_ids[id].clients = projects_ids[id].clients.filter(
       (client) => client !== ws
@@ -81,34 +71,8 @@ const joinProject = (id, ws) => {
   try {
     if (projects_ids[id] === undefined || projects_ids[id] === null)
       createProject(id);
-
     projects_ids[id].clients.push(ws);
     ws.roomID = id;
-
-    broadcast(
-      ws,
-      JSON.stringify({
-        action: "client_joined",
-        data: {
-          ws_id: ws.id,
-          ws_roomID: ws.roomID,
-        },
-      })
-    );
-
-    const clients = projects_ids[id].clients.map((client) => {
-      return {
-        ws_id: client.id,
-      };
-    });
-    ws.send(JSON.stringify({
-      action: "project_joined",
-      data: {
-        // filter ws_id from clients
-        clients: clients.filter((client) => client.ws_id !== ws.id),
-      }
-    }))
-
   } catch (error) {
     console.error("Error:", error);
   }
@@ -123,12 +87,17 @@ wss.on("connection", (ws) => {
   ws.roomID = null;
   console.log(`Client id: ${ws.id} connected`);
 
-  ws.send(JSON.stringify({
-    action: 'Welcome',
-    data: {
-      ws_id: ws.id,
-    }
-  }))
+  // Send a welcome message
+  ws.send(
+    // send as buffer
+    JSON.stringify({
+      action: "Welcome",
+      data: {
+        ws_id: ws.id,
+        ws_roomID: ws.roomID,
+      },
+    })
+  );
 
   try {
     // ChatGPT
@@ -152,17 +121,56 @@ wss.on("connection", (ws) => {
         const data = messageObj.data;
         console.log("New data is: ", data);
         switch (action) {
+          case "newCode":
+            const new_html = data.html;
+            const new_css = data.css;
+
+            console.log("New HTML:", new_html);
+            console.log("New CSS:", new_css);
+            ws.send(
+              JSON.stringify({
+                action: "newCode",
+                data: {
+                  new_html: new_html,
+                  new_css: new_css,
+                },
+              })
+            );
+            break;
+          case "newHTML":
+            const HTML = data.html;
+            ws.send(
+              JSON.stringify({
+                action: "newHTML",
+                data: {
+                  new_html: HTML,
+                },
+              })
+            );
+            break;
+          case "newCSS":
+            const CSS = data.css;
+            ws.send(
+              JSON.stringify({
+                action: "newCSS",
+                data: {
+                  new_css: CSS,
+                },
+              })
+            );
+            break;
           case "generateNew":
-            // const html = data.html;
-            // const css = data.css;
+            console.log("I am here!");
+            const html = data.html;
+            const css = data.css;
             const prompt = data.prompt;
+            // console.log("Prompt:", prompt);
             ws.send(
               JSON.stringify({
                 action: "generateNew",
                 data: {
-                  prompt: prompt,
-                  // html: html,
-                  // css: css,
+                  html: html,
+                  css: css,
                 },
               })
             );
@@ -202,26 +210,22 @@ wss.on("connection", (ws) => {
       const messageObj = JSON.parse(message);
       const action = messageObj.action;
       const data = messageObj.data;
+      //   console.log("New data is: ", data);
       switch (action) {
         case "TEST":
           // console.log(messageObj)
           // ws.send(JSON.stringify(messageObj))
-          console.log(projects_ids);
-          break;
-        case "active_clients_imgs":
-          console.log("Active Clients: ", projects_ids[ws.roomID].clients);
-          const room_clients = projects_ids[ws.roomID].forEach((client) => {
-            return client.imgSrc;
-          })
-          console.log("Room Clients: ", room_clients);
+          //   console.log(projects_ids);
           break;
         case "join_project":
           const roomID = data.roomID;
-          joinProject(roomID,ws);
+          joinProject(roomID, ws);
           break;
         case "leave_project":
           leaveProject(ws.roomID, ws);
           break;
+
+        // case "newCode":
 
         case "updateHTML":
           const html = data.html;
@@ -240,7 +244,11 @@ wss.on("connection", (ws) => {
           const prompt = data.prompt;
           const HTML = data.html;
           const cssText = data.css;
+
+          console.log("Inputs from WS to CHAT_WS");
           console.log("Prompt:", prompt);
+          console.log("HTML:", HTML);
+          console.log("CSS:", cssText);
           //   console.log("chatws is: ", chat_ws);
           if (chat_ws) {
             chat_ws.send(
@@ -248,7 +256,7 @@ wss.on("connection", (ws) => {
                 action: "generateNew",
                 data: {
                   prompt: prompt,
-                  HTML: HTML,
+                  html: HTML,
                   css: cssText,
                 },
               })
@@ -256,15 +264,6 @@ wss.on("connection", (ws) => {
           } else {
             console.log("ChatGPT WebSocket is not connected");
           }
-          //   broadcast(
-          //     ws,
-          //     JSON.stringify({
-          //       action: "generateNew",
-          //       data: {
-          //         prompt: html,
-          //       },
-          //     })
-          //   );
           break;
         case "updateCSS":
           const css = data.css;
@@ -292,21 +291,21 @@ wss.on("connection", (ws) => {
             })
           );
           break;
-        
+
         case "updateBlinkingCursor":
-            console.log("Blinking Cursor: ", data.position);
-            const position = data.position;
-            broadcast(
-                ws,
-                JSON.stringify({
-                action,
-                data: {
-                    position,
-                    id: ws.id,
-                },
-                })
-            );
-            break;
+          console.log("Blinking Cursor: ", data.position);
+          const position = data.position;
+          broadcast(
+            ws,
+            JSON.stringify({
+              action,
+              data: {
+                position,
+                id: ws.id,
+              },
+            })
+          );
+          break;
       }
 
       //
