@@ -307,7 +307,7 @@ export default function Renderer({ id }) {
     const nextIframe = activeIframe === "iframe1" ? "iframe2" : "iframe1";
     updateIframeContent(nextIframe, html, css);
     setActiveIframe(nextIframe);
-  }, 300);
+  }, 500);
 
   useEffect(() => {
     debouncedUpdate(htmlInput, cssInput);
