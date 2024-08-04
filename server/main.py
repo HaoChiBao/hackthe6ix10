@@ -445,7 +445,6 @@ async def websocket_generate_html(websocket: WebSocket):
                 print("CSS received:", css)
 
                 response_model = instructor.Partial[ReturnData]
-                # classification = await code_classifier(prompt, html, css)
                 stream = await code_generation(prompt, html, css, response_model)
 
                 for response in stream:
