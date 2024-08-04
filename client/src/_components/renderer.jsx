@@ -50,6 +50,8 @@ const Renderer = ({ id }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
+  const [selectedElement, setSelectedElement] = useState(null);
+  const htmlEditorRef = useRef(null);
 
   const [sessionClients, setSessionClients] = useState([
     // {imgSrc: defaultPfp0},
@@ -64,8 +66,25 @@ const Renderer = ({ id }) => {
   );
 
   const [innerText, setInnerText] = useState("...");
+    let serverAddress = "ws://localhost:8080";
+  // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
 
   const [user, setUser] = useState(null);
+  const [ws, setWS] = useState(null);
+
+  const createSessionClient = (id) => {
+    const sessionClient = document.createElement("div");
+    sessionClient.className = "session-client";
+    sessionClient.id = id+"-pfp";
+
+    const img = document.createElement("img");
+    img.src = pfpList[Math.floor(Math.random() * pfpList.length)];
+    sessionClient.appendChild(img);
+
+    const activeClients = document.getElementsByClassName("active-clients")[0];
+    activeClients.appendChild(sessionClient);
+    return sessionClient;
+  }
 
   useEffect(() => {
     const auth = getAuth();
@@ -80,9 +99,9 @@ const Renderer = ({ id }) => {
     return () => unsubscribe;
   }, []);
 
-  let serverAddress = "ws://localhost:8080";
-  // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
-  const [ws, setWS] = useState(null);
+  useEffect(() => {
+    console.log("Session Clients:", sessionClients);
+  },[sessionClients])
 
   const navigate = useNavigate();
 
@@ -130,14 +149,14 @@ const Renderer = ({ id }) => {
       // create a new cursor element
       cursorElement = document.createElement("div");
       cursorElement.className = "blinking-cursor";
-      cursorElement.id = id + '-blinking-cursor';
+      cursorElement.id = id + "-blinking-cursor";
 
       document.body.appendChild(cursorElement);
     }
 
     cursorElement.style.left = position.x + "px";
     cursorElement.style.top = position.y + "px";
-  }
+  };
 
   const handleMouseMove = (e) => {
     const cursor = {
@@ -203,33 +222,33 @@ const Renderer = ({ id }) => {
   }, [blinkingPosition])
 
   const getCaretCoordinates = (element, position) => {
-      const div = document.createElement('div');
-      const text = element.value.substring(0, position);
-      const styles = getComputedStyle(element);
-      const bounding = element.getBoundingClientRect();
+    const div = document.createElement("div");
+    const text = element.value.substring(0, position);
+    const styles = getComputedStyle(element);
+    const bounding = element.getBoundingClientRect();
 
-      for (const prop of styles) {
-          div.style[prop] = styles[prop];
-      }
+    for (const prop of styles) {
+      div.style[prop] = styles[prop];
+    }
 
-      div.style.position = 'absolute';
-      div.style.whiteSpace = 'pre-wrap';
-      div.style.visibility = 'hidden';
-      div.textContent = text;
-      document.body.appendChild(div);
+    div.style.position = "absolute";
+    div.style.whiteSpace = "pre-wrap";
+    div.style.visibility = "hidden";
+    div.textContent = text;
+    document.body.appendChild(div);
 
-      const span = document.createElement('span');
-      span.textContent = element.value[position] || '.';
-      div.appendChild(span);
+    const span = document.createElement("span");
+    span.textContent = element.value[position] || ".";
+    div.appendChild(span);
 
-      const { offsetTop: top, offsetLeft: left } = span;
-      document.body.removeChild(div);
+    const { offsetTop: top, offsetLeft: left } = span;
+    document.body.removeChild(div);
 
-      return { top: top + bounding.top, left };
-  }
+    return { top: top + bounding.top, left };
+  };
 
   // Update the innerHTML of the div
-  const updateHTML = (html) => {}
+  const updateHTML = (html) => {};
   // Debounced functions
   const debouncedUpdateHTML = debounce((html) => {
     setHtmlInput(html);
@@ -295,8 +314,7 @@ const Renderer = ({ id }) => {
             case "project_joined":
               const clients = data.clients;
               clients.forEach((client) => {
-                const randomPfp = pfpList[Math.floor(Math.random() * pfpList.length)];
-                setSessionClients([...sessionClients, {imgSrc: randomPfp, id: client.ws_id}]);
+                const current_session_client = createSessionClient(client.id);
               })
               console.log("Clients:", clients);
               break;
@@ -310,19 +328,19 @@ const Renderer = ({ id }) => {
               console.log("Client Joined");
               const join_id = data.ws_id;
               // const client_imgSrc = data.imgSrc;
-              const client_pfp = document.getElementById(`${join_id}-pfp`);
-              if (client_pfp === null) {
-                setSessionClients([...sessionClients, {imgSrc: defaultPfp0 , id: join_id}]);
-              }
+              const new_session_client = createSessionClient(join_id);
               break;
             case "client_disconnected":
               const client_id = data.ws_id;
-              setSessionClients([...sessionClients.filter((client) => client.id !== client_id)]);
               const client_cursor = document.getElementById(client_id + "-cursor")
               if (client_cursor !== null) {
                 client_cursor.remove();
               }
 
+              const session_client = document.getElementById(client_id + "-pfp");
+              if (session_client !== null) {
+                session_client.remove();
+              }
               break;
           }
         } catch (error) {
@@ -389,8 +407,7 @@ const Renderer = ({ id }) => {
   const handleIframeMouseOver = (e) => {
     const element = e.target;
     const rect = element.getBoundingClientRect();
-    element.style.outline = "1px solid #888";
-    element.style.borderRadius = "4px";
+    element.style.outline = "2px dashed #7B70F5";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
@@ -425,6 +442,31 @@ const Renderer = ({ id }) => {
 
       iframeDocument.addEventListener("mouseover", handleIframeMouseOver);
       iframeDocument.addEventListener("mouseout", handleIframeMouseOut);
+
+      window.addEventListener("message", (event) => {
+        if (event.data.type === "hover") {
+          // Highlight code in CodeMirror
+          if (htmlEditorRef.current) {
+            console.log("Event Data:", event.data);
+            const editor = htmlEditorRef.current.getCodeMirror();
+            editor.eachLine((line) => {
+              const text = editor.getLine(line.lineNo());
+              console.log("Text:", text);
+              if (text.includes(event.data.path)) {
+                editor.addLineClass(line.lineNo(), "background", "highlight");
+              } else {
+                editor.removeLineClass(
+                  line.lineNo(),
+                  "background",
+                  "highlight"
+                );
+              }
+            });
+          }
+        } else if (event.data.type === "click") {
+          setSelectedElement(event.data.path);
+        }
+      });
     }
 
     return () => {
@@ -547,9 +589,9 @@ const Renderer = ({ id }) => {
         <div className="button-container">
 
           <div className="active-clients">
-            {(sessionClients.length > 0) && sessionClients.map((client) => {
+            {/* {(sessionClients.length > 0) && sessionClients.map((client) => {
               return <SessionClient imgSrc={client.imgSrc} />
-            })}
+            })} */}
           </div>
 
           <button onClick={handleSave} className="save-button">
@@ -605,13 +647,8 @@ const Renderer = ({ id }) => {
                   }}
                   editorDidMount={(editor) => {
                     editor.setValue(htmlInput);
+                    htmlEditorRef.current = editor;
                   }}
-                  onInputRead={(e) => { setBlinkingPosition(null); setBlinkingPosition(e)}}
-                  onKeyUp={(e) => { setBlinkingPosition(null); setBlinkingPosition(e)}}
-                  onClick={(e) => { setBlinkingPosition(null); setBlinkingPosition(e)}}
-                    // onInput={handleClientBlinkingCursor}
-                    // onClick={handleClientBlinkingCursor}
-                    // onKeyUp={handleClientBlinkingCursor}
                 />
               ) : (
                 <CodeMirror
@@ -651,6 +688,6 @@ const Renderer = ({ id }) => {
       </div>
     </main>
   );
-}
+};
 
 export default Renderer;
