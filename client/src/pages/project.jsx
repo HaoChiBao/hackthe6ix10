@@ -1,4 +1,4 @@
-import Renderer from "../_components/renderer";
+import Renderer from "../_components/renderer.jsx";
 import { useParams } from "react-router-dom";
 
 const Project = () => {

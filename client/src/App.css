@@ -9,7 +9,7 @@
 
 button {
   background-color: var(--brand);
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.25rem;
   border: none;
   border-radius: 8px;
   color: white;
@@ -53,6 +53,7 @@ body {
   align-items: center;
   gap: 8px;
   height: 2.5rem;
+  padding: 1rem;
 }
 
 .back-button {
@@ -196,7 +197,7 @@ textarea {
   background: white;
   outline: none;
   border: none;
-  max-width: min-content;
+  width: fit-content;
   text-wrap: nowrap;
   font-style: "DM Sans", sans-serif;
   height: 2.5rem;
@@ -210,4 +211,8 @@ textarea {
 
 .project-name {
   padding: 1rem;
+}
+
+.code-mirror {
+  height: 100%;
 }
