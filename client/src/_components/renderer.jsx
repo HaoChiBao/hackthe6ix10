@@ -32,7 +32,7 @@ const Renderer = ({ id }) => {
 
   const [innerText, setInnerText] = useState("...");
   //   let serverAddress = "ws://localhost:8080";
-  // const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
+  const serverAddress = "wss://hackthe6ix-e92731233d9a.herokuapp.com/";
 
   const [ws, setWS] = useState(null);
 
@@ -114,7 +114,7 @@ const Renderer = ({ id }) => {
 
       console.log(line, ch);
       // console.log(position)
-      const { top, left } = getCaretCoordinates(textInput, position);
+      //   const { top, left } = getCaretCoordinates(textInput, position);
       // console.log(top, left)
       // blinkingCursor.style.top = `${top}px`;
       // blinkingCursor.style.left = `${left}px`;
