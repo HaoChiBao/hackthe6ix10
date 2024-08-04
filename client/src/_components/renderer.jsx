@@ -24,6 +24,7 @@ import debounce from "lodash.debounce";
 export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
   const [cssInput, setCssInput] = useState(``);
+  const htmlEditorRef = useRef();
   const [projectName, setProjectName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const iframeRef = useRef(null);
@@ -32,6 +33,7 @@ export default function Renderer({ id }) {
   const [recognition, setRecognition] = useState(null);
   const [activeTab, setActiveTab] = useState("html");
   const [activeIframe, setActiveIframe] = useState("iframe1");
+  const [selectedElement, setSelectedElement] = useState(null);
 
   const [sanitizedHTML, setSanitizedHTML] = useState(
     DOMPurify.sanitize(htmlInput)
@@ -217,8 +219,7 @@ export default function Renderer({ id }) {
     const element = e.target;
     console.log("Mouse over element:", element);
     const rect = element.getBoundingClientRect();
-    element.style.outline = "2px dashed #7B70F5 !important";
-    element.style.borderRadius = "4px !important";
+    element.style.outline = "2px dashed #7B70F5";
     element.style.cursor = "default";
 
     const html = iframeRef.current.contentDocument.documentElement.outerHTML;
@@ -274,7 +275,9 @@ export default function Renderer({ id }) {
           <head>
             <style>${DOMPurify.sanitize(cssInput)}</style>
           </head>
-          <body>${DOMPurify.sanitize(htmlInput)}</body>
+          <body style="min-height: 1000px;">${DOMPurify.sanitize(
+            htmlInput
+          )}</body>
         </html>
       `);
       iframeDocument.close();
