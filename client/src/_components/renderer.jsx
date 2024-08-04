@@ -5,8 +5,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { db } from "../firebase";
 import cursorAsset from "../assets/cursor.png";
-
 import "./renderer.css";
+import { Controlled as CodeMirror } from "react-codemirror2";
+import "codemirror/lib/codemirror.css";
+import "codemirror/mode/xml/xml";
+import "codemirror/mode/css/css";
+
+import debounce from "lodash.debounce";
 
 export default function Renderer({ id }) {
   const [htmlInput, setHtmlInput] = useState(``);
@@ -14,7 +19,6 @@ export default function Renderer({ id }) {
   const [projectName, setProjectName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const iframeRef = useRef(null);
-
   const [input, setInput] = useState(``);
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
@@ -25,25 +29,15 @@ export default function Renderer({ id }) {
   );
 
   const [innerText, setInnerText] = useState("...");
-  let serverAddress = "ws://localhost:8080";
-  // serverAddress = "ws://hack-the-6ix10.glitch.me/";
+  // let serverAddress = "ws://localhost:8080";
+  const serverAddress = "ws://hack-the-6ix10.glitch.me/";
   const [ws, setWS] = useState(null);
 
   const TEST_ROOM = "TEST_ROOM";
 
-  const testFunc = () => {
-    ws.send(
-      JSON.stringify({
-        action: "TEST",
-        data: [{ test: "test" }, { test: "test" }, { test: "test" }],
-      })
-    );
-  };
-
   const updateCursor = (cursor, id) => {
     let cursorElement = document.getElementById(id);
     if (cursorElement === null || cursorElement === undefined) {
-      // create a new cursor element
       cursorElement = document.createElement("div");
       cursorElement.className = "client-cursor";
       cursorElement.id = id;
@@ -54,17 +48,12 @@ export default function Renderer({ id }) {
 
       const colours = ["red", "blue", "green", "purple", "orange", "pink"];
       const color = colours[Math.floor(Math.random() * colours.length)];
-      // filter: drop-shadow(1.3px 0 0 red)
-      //       drop-shadow(0 1.3px 0 red)
-      //       drop-shadow(-1.3px 0 0 red)
-      //       drop-shadow(0 -1.3px 0 red);
       cursorElement.style.filter = `drop-shadow(1.3px 0 0 ${color}) drop-shadow(0 1.3px 0 ${color}) drop-shadow(-1.3px 0 0 ${color}) drop-shadow(0 -1.3px 0 ${color})`;
 
       document.body.appendChild(cursorElement);
     }
     cursorElement.style.left = cursor.x + "px";
     cursorElement.style.top = cursor.y + "px";
-    // console.log(cursorElement)
   };
 
   const handleMouseMove = (e) => {
@@ -81,22 +70,14 @@ export default function Renderer({ id }) {
     });
   };
 
-  const handleHTMLDown = (e) => {
-
-  }
-
-  const handleCSSDown = (e) => {
-
-  }
-
-  // Update the innerHTML of the div
-  const updateHTML = (html) => {
+  // Debounced functions
+  const debouncedUpdateHTML = debounce((html) => {
     setHtmlInput(html);
-  };
+  }, 10);
 
-  const updateCSS = (css) => {
+  const debouncedUpdateCSS = debounce((css) => {
     setCssInput(css);
-  };
+  }, 10);
 
   const sendWS = (message) => {
     try {
@@ -107,22 +88,17 @@ export default function Renderer({ id }) {
       ws.send(JSON.stringify(message));
     } catch (error) {
       console.error("Send WS Error");
-      // console.error('Error:', error)
     }
   };
 
   useEffect(() => {
     const initiate_WS = async () => {
       if (ws === null) {
-        // retrieve data from the server
         setWS(new WebSocket(serverAddress));
         return;
       }
 
-      console.log("Connecting to the server...");
-
       ws.onopen = () => {
-        console.log("Connected to the server");
         ws.send(
           JSON.stringify({
             action: "join_project",
@@ -133,27 +109,21 @@ export default function Renderer({ id }) {
         );
       };
 
-      ws.onclose = (e) => {
-        console.log("Connection closed");
-      };
+      ws.onclose = (e) => {};
 
       ws.onmessage = async (e) => {
         try {
           const message = JSON.parse(e.data);
           const action = message.action;
           const data = message.data;
-          // console.log(message)
           switch (action) {
             case "Welcome":
-              // console.log(data)
               break;
             case "updateHTML":
-              const html = data.html;
-              updateHTML(html);
+              debouncedUpdateHTML(data.html);
               break;
             case "updateCSS":
-              const css = data.css;
-              updateCSS(css);
+              debouncedUpdateCSS(data.css);
               break;
             case "updateCursor":
               const cursor = data.cursor;
@@ -181,11 +151,9 @@ export default function Renderer({ id }) {
   }, [ws]);
 
   useEffect(() => {
-    console.log("ID:" + id);
     const fetchData = async () => {
       try {
         const projectNameDoc = await getDoc(doc(db, "projects", id));
-
         const htmlDoc = await getDoc(doc(db, "projects", id, "files", "html"));
         const cssDoc = await getDoc(doc(db, "projects", id, "files", "css"));
 
@@ -208,9 +176,8 @@ export default function Renderer({ id }) {
   }, [id]);
 
   const changeInnerCSS = (e) => {
-    const css = e.target.value;
-    updateCSS(css);
-
+    const css = e;
+    setCssInput(css);
     sendWS({
       action: "updateCSS",
       data: {
@@ -219,17 +186,37 @@ export default function Renderer({ id }) {
     });
   };
 
-  const changeInnerHTML = (e) => {
-
-    const html = e.target.value;
-    updateHTML(html);
-
+  const changeInnerHTML = (value) => {
+    setHtmlInput(value);
     sendWS({
       action: "updateHTML",
       data: {
-        html,
+        html: value,
       },
     });
+  };
+
+  const handleIframeMouseOver = (e) => {
+    const element = e.target;
+    const rect = element.getBoundingClientRect();
+    element.style.outline = "1px solid #888";
+    element.style.borderRadius = "4px";
+    element.style.cursor = "default";
+
+    const html = iframeRef.current.contentDocument.documentElement.outerHTML;
+    const elementHtml = element.outerHTML;
+
+    // highlightCode(elementHtml);
+  };
+
+  const handleIframeMouseOut = (e) => {
+    const tooltip = document.getElementById("tooltip");
+    tooltip.style.display = "none";
+
+    const element = e.target;
+    element.style.outline = "none";
+
+    // clearHighlight();
   };
 
   useEffect(() => {
@@ -245,7 +232,17 @@ export default function Renderer({ id }) {
         </html>
       `);
       iframeDocument.close();
+
+      iframeDocument.addEventListener("mouseover", handleIframeMouseOver);
+      iframeDocument.addEventListener("mouseout", handleIframeMouseOut);
     }
+
+    return () => {
+      if (iframeDocument) {
+        iframeDocument.removeEventListener("mouseover", handleIframeMouseOver);
+        iframeDocument.removeEventListener("mouseout", handleIframeMouseOut);
+      }
+    };
   }, [htmlInput, cssInput]);
 
   useEffect(() => {
@@ -276,12 +273,10 @@ export default function Renderer({ id }) {
       recognition.stop();
     } else {
       recognition.start();
-      console.log(
-        "Speech recognition started. Try speaking into the microphone."
-      );
     }
     setIsRecording(!isRecording);
   };
+
   const handleDeploy = async () => {
     console.log("Deploying project...");
   };
@@ -329,6 +324,16 @@ export default function Renderer({ id }) {
 
   return (
     <main onMouseMove={handleMouseMove}>
+      <div
+        id="tooltip"
+        style={{
+          position: "absolute",
+          display: "none",
+          backgroundColor: "yellow",
+          padding: "5px",
+          borderRadius: "5px",
+        }}
+      ></div>
       <div className="top-bar">
         <Link className="back-button" to="/">
           <ArrowLeft size={16} />
@@ -382,30 +387,38 @@ export default function Renderer({ id }) {
               </div>
             </div>
             <form className="form">
-              {activeTab === "html" && (
-                <div className="field">
-                  <textarea
-                    id="html"
-                    value={htmlInput}
-                    onChange={changeInnerHTML}
-                    onMouseDown={handleHTMLDown}
-                    rows="20"
-                    cols="50"
-                  />
-                </div>
-              )}
-
-              {activeTab === "css" && (
-                <div className="field">
-                  <textarea
-                    id="css"
-                    value={cssInput}
-                    onChange={changeInnerCSS}
-                    onMouseDown={handleCSSDown}
-                    rows="20"
-                    cols="50"
-                  />
-                </div>
+              {activeTab === "html" ? (
+                <CodeMirror
+                  className="code-mirror"
+                  value={htmlInput}
+                  options={{
+                    mode: "htmlmixed",
+                    theme: "default",
+                    lineNumbers: true,
+                  }}
+                  onBeforeChange={(editor, data, value) => {
+                    changeInnerHTML(value);
+                  }}
+                  editorDidMount={(editor) => {
+                    editor.setValue(htmlInput);
+                  }}
+                />
+              ) : (
+                <CodeMirror
+                  className="code-mirror"
+                  value={cssInput}
+                  options={{
+                    mode: "css",
+                    theme: "default",
+                    lineNumbers: true,
+                  }}
+                  onBeforeChange={(editor, data, value) => {
+                    changeInnerCSS(value);
+                  }}
+                  editorDidMount={(editor) => {
+                    editor.setValue(cssInput);
+                  }}
+                />
               )}
             </form>
           </div>

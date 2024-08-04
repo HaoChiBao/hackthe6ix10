@@ -196,7 +196,7 @@ textarea {
   background: white;
   outline: none;
   border: none;
-  max-width: min-content;
+  width: fit-content;
   text-wrap: nowrap;
   font-style: "DM Sans", sans-serif;
   height: 2.5rem;
@@ -210,4 +210,8 @@ textarea {
 
 .project-name {
   padding: 1rem;
+}
+
+.code-mirror {
+  height: 100%;
 }
