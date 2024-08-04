@@ -1,5 +1,5 @@
 examples = {
-    "fun and playful portfolio website": {
+    "fun , playful , colorful , bold  personal portfolio website": {
         "html": """
 <!DOCTYPE html>
 <html lang="en">
@@ -289,7 +289,7 @@ footer {
 
         """
     },
-    "modern and dark tech landing page": {
+    "modern , gradient, gradients , and dark  fintech , crypto, blockchain , tech landing page website": {
         "html": """
 <!DOCTYPE html>
 <html lang="en">
@@ -384,31 +384,228 @@ footer {
 </html>
         """,
         "css": """
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    max-width: 600px;
-    margin: 0 auto;
+:root {
+  --primary-color: #0f0c29;
+  --secondary-color: #302b63;
+  --accent-color: #24243e;
+  --text-color: #fff;
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(10px);
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --font-family: 'Inter', sans-serif;
 }
 
-form input, form textarea, form button {
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-size: 16px;
+/* General styles */
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  color: var(--text-color);
 }
 
-form button {
-    background-color: #333;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--box-shadow);
+}
+
+h2 {
+text-align: center;
+}
+
+header .logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+nav ul li a {
+  color: var(--text-color);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+nav ul li a:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hero section */
+.hero {
+  text-align: center;
+  padding: 8rem 2rem;
+  margin: 2rem 1rem;
+  border-radius: 10px;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin: 0 0 1rem;
+}
+
+.hero p {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+/* Cards section */
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--box-shadow);
+  padding: 2rem;
+  border-radius: 10px;
+  width: 300px;
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+}
+
+.card h2 {
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.card p {
+  margin: 0;
+}
+
+/* Team section */
+.team {
+  padding: 2rem;
+  text-align: center;
+}
+
+.team-members {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.team-member {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--box-shadow);
+  padding: 2rem;
+  border-radius: 10px;
+  width: 200px;
+  text-align: center;
+}
+
+.team-member img {
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 1rem;
+}
+
+/* Testimonials section */
+testimonials {
+  padding: 2rem;
+  text-align: center;
+  display:flex;
+  flex-direction:column;
+align-items:center;
+
+}
+
+.testimonial {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--box-shadow);
+  padding: 2rem;
+  border-radius: 10px;
+  margin: 1rem auto;
+  width: 60%;
+}
+
+/* Contact section */
+.contact {
+  padding: 2rem;
+  text-align: center;
+}
+
+.contact-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--box-shadow);
+  padding: 2rem;
+  border-radius: 10px;
+  margin: 0 auto;
+  width: 50%;
+  text-align: left;
+}
+
+.contact form {
+  display: flex;
+  flex-direction: column;
+}
+
+.contact label {
+  margin-top: 1rem;
+}
+
+.contact input,
+.contact textarea {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 5px;
+  background: var(--glass-bg);
+  color: var(--text-color);
+}
+
+.contact button {
+  margin-top: 1rem;
+  padding: 0.5rem 2rem;
+  border: none;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.contact button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--box-shadow);
+  margin: 2rem 1rem;
+  border-radius: 10px;
 }
         """
     },
-    "light and minimalist website": {
+    "light , tech , simple and minimalist landing page website": {
         "html": """
 <!DOCTYPE html>
 <html lang="en">
